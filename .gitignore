@@ -1,0 +1,11 @@
+# RATS_NEST git ignores
+
+# compiled python
+*.pyc
+
+# databases
+*.sqlite3
+
+# pycharm files
+*.xml
+*.iml
