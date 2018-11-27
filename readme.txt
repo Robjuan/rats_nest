@@ -12,7 +12,10 @@ This will be a web app done on Heroku, with Django as the framework
 
 Workflow:
 
-Write code locally, test on local Heroku locally
-Commit to git repo - is mirrored to Heroku
-- build / release phase - ## this needs clarification 
-Publish on heroku
+Active Development:
+Write code locally, test on local Heroku locall
+Commit to working_dev branch of repo
+
+Deploy:
+Merge working_dev branch to master branch
+Master branch will be automatically deployed to Heroku
