@@ -12,24 +12,39 @@ https://docs.djangoproject.com/en/2.1/ref/settings/
 
 import os, django_heroku
 import dj_database_url
+from decouple import config
+
+#https://docs.djangoproject.com/en/2.1/howto/deployment/checklist/
 
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+# using decouple means that configs will be pulled from the local .env file
+# these variables are defined (for heroku) in the heroku dashboard (done 27/11)
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/2.1/howto/deployment/checklist/
+SECRET_KEY = config('SECRET_KEY')
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'gk&viw^(q(6s-(1ps#)5x!520s4lt0f!%+x41ii)lgq=!-6qev'
+DEBUG = config('DEBUG', cast=bool)
 
 
-# TODO: rs @ 27/11 what is this
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# Database
+# https://docs.djangoproject.com/en/2.1/ref/settings/#databases
 
-ALLOWED_HOSTS = []
+DATABASES = {
+     'default': {
+         'ENGINE': 'django.db.backends.postgresql_psycopg2',
+         'NAME': config('DB_NAME'),
+         'USER': config('DB_USER'),
+         'PASSWORD': config('DB_PASS'),
+         'HOST': config('DB_HOST'),
+         'PORT': '',
+     }
+}
+
+
+ALLOWED_HOSTS = ['0.0.0.0', 'localhost',
+                 'rats-nest-420.herokuapp.com']
 
 
 # Application definition
@@ -75,19 +90,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'rats_nest.wsgi.application'
 
-
-# Database
-# https://docs.djangoproject.com/en/2.1/ref/settings/#databases
-
-DATABASES = {
-    # this is overwritten at the end of the file by dj_database_url
-    # 'default': {
-    #     'ENGINE': 'django.db.backends.sqlite3',
-    #     'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    # }
-}
-
-
 # Password validation
 # https://docs.djangoproject.com/en/2.1/ref/settings/#auth-password-validators
 
@@ -131,4 +133,4 @@ django_heroku.settings(locals())
 
 # to make postgreSQL work
 # https://devcenter.heroku.com/articles/heroku-postgresql#connecting-in-python
-DATABASES['default'] = dj_database_url.config(conn_max_age=600, ssl_require=True)
+DATABASES['default'] = dj_database_url.config(conn_max_age=600)

@@ -14,8 +14,8 @@ class Player(models.Model):
 
 class Teams(models.Model):
     team_ID = models.AutoField(primary_key=True)
-    players = models.ManyToManyField(Player,
-                                     models.PROTECT)
+    players = models.ManyToManyField(Player)
+    # ManyToMany doesn't take on_delete??
     # PROTECT will raise an error when the referenced obj (ie, the players?) are deleted
     # don't delete players if the team exists
 
@@ -30,19 +30,21 @@ class Teams(models.Model):
 class Games(models.Model):
     game_ID = models.AutoField(primary_key=True)
     team_ID = models.ForeignKey(Teams,
-                                models.PROTECT)
+                                on_delete=models.PROTECT)
     # need to handle a way to save the opposing team name without creating too much junk
     # if we only know the name
 
     # SET_NULL means that if you delete the referenced team, this just goes to null
     opposing_team_ID = models.ForeignKey(Teams,
-                                         models.SET_NULL,
+                                         on_delete=models.SET_NULL,
                                          blank=True,
-                                         null=True)
+                                         null=True,
+                                         related_name='opposition_id')
     opposing_game_ID = models.ForeignKey('self',
-                                         models.SET_NULL,
+                                         on_delete=models.SET_NULL,
                                          blank=True,
-                                         null=True)
+                                         null=True,
+                                         related_name='opposition_game_id')
 
     # non-key
     datetime = models.DateTimeField()
@@ -59,10 +61,12 @@ class Pulls(models.Model):
     pull_ID = models.AutoField(primary_key=True)
     # PROTECT will error if the player is deleted when pulls exist
     player_ID = models.ForeignKey(Player,
-                                  models.PROTECT)
+                                  on_delete=models.PROTECT)
 
     # non-key
-    hangtime = models.DecimalField(null=True)
+    hangtime = models.DecimalField(null=True,
+                                   decimal_places=2,
+                                   max_digits=4)
 
 
 class Points(models.Model):
@@ -72,7 +76,7 @@ class Points(models.Model):
                                 models.CASCADE)
     # SET NULL means that if the pull is deleted, this just goes to null
     pull_ID = models.ForeignKey(Pulls,
-                                models.SET_NULL,
+                                on_delete=models.SET_NULL,
                                 blank=True,
                                 null=True)
 
@@ -87,24 +91,29 @@ class Points(models.Model):
 class Possessions(models.Model):
     possession_ID = models.AutoField(primary_key=True)
     point_ID = models.ForeignKey(Points,
-                                 models.CASCADE)
+                                 on_delete=models.CASCADE)
     # if the point is deleted, delete relevant possessions
 
 
 class PossessionEvents(models.Model):
     event_ID = models.AutoField(primary_key=True)
     possession_ID = models.ForeignKey(Possessions,
-                                      models.CASCADE)
+                                      on_delete=models.CASCADE)
+    players = models.ManyToManyField(Player,
+                                     related_name='players_onfield')
     # if the possession is deleted, delete relevant events
     passer = models.ForeignKey(Player,
-                               models.PROTECT,
-                               blank=True)
+                               on_delete=models.PROTECT,
+                               blank=True,
+                               related_name='passer')
     receiver = models.ForeignKey(Player,
-                                 models.PROTECT,
-                                 blank=True)
+                                 on_delete=models.PROTECT,
+                                 blank=True,
+                                 related_name='receiver')
     defender = models.ForeignKey(Player,
-                                 models.PROTECT,
-                                 blank=True)
+                                 on_delete=models.PROTECT,
+                                 blank=True,
+                                 related_name='defender')
     # don't allow deletion of players if they have events attached to them
     # depending on the event_type, either:
     # defender ONLY will be blank, or passer&recevier will BOTH be blank

@@ -4,7 +4,6 @@ from django.http import HttpResponse
 import os, psycopg2
 
 # settings.py takes care of the backend of this
-DATABASE_URL = os.environ['DATABASE_URL']
 
 def index(request):
     return HttpResponse("this is 'index' view of db_output <p> "
@@ -13,7 +12,10 @@ def index(request):
 
 def db_view(request):
     # connect to DB
-    conn = psycopg2.connect(DATABASE_URL, sslmode='require')
+    DATABASE_URL = os.environ['DATABASE_URL']
+
+    print(DATABASE_URL)
+    conn = psycopg2.connect(DATABASE_URL, sslmode='allow')
     # open cursor
     cur = conn.cursor()
 
