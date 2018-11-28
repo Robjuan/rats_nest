@@ -9,30 +9,22 @@ def index(request):
 
 
 def postgreSQL(request):
-    
-    DATABASE_URL = os.environ['DATABASE_URL']
 
-    conn = psycopg2.connect(DATABASE_URL, sslmode='allow')
-    # open cursor
-    cur = conn.cursor()
+    from .models import Players
 
-    cur.execute("""SELECT table_name FROM information_schema.tables
-            WHERE table_schema = 'public'""")
+    display_txt = []
+    for table in Players.objects.all():
+        display_txt.append(str(table))
 
-
-    for table in cur.fetchall():
-        print(table)
-
-    return HttpResponse('this will become something produced by our DB')
+    return HttpResponse('this is produced by the DB:<p>' +
+                        str(display_txt))
 
 def insert_test_player(request):
 
-    print()
-
-    from .models import Player
-    p = Player(proper_name='homer simpson', hometown='evergreen terrace')
+    from .models import Players
+    p = Players(proper_name='homer simpson', hometown='evergreen terrace')
     p.save()
 
-    print(Player.objects.all())
+    print(Players.objects.all())
 
     return HttpResponse('done!')
