@@ -13,7 +13,9 @@ This will be a web app done on Heroku, with Django as the framework
 Workflow:
 
 Active Development:
-Write code locally, test on local Heroku locall
+ensure running using 'local_development' settings, or custom
+Write code locally
+run heroku local to test
 Commit to working_dev branch of repo
 
 Deploy:
@@ -22,4 +24,4 @@ Deploy:
 Merge working_dev branch to master branch
 -- git checkout master
 -- git merge working_dev
-Master branch will be automatically deployed to Heroku
+Log in to Heroku > Deploy > Manual Deploy (at bottom)
