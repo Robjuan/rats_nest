@@ -1,3 +1,10 @@
+# base.py
+# this contains all the settings that are common across environments
+# specific environment settings can be set that import this, and those are to be used
+# use virtualenv if you like , or don't not a big deal
+# on linux/mac - "export DJANGO_SETTINGS_MODULE=rats_nest.settings.local_development"
+# on windows - fukn idk
+
 """
 Django settings for rats_nest project.
 
@@ -16,17 +23,12 @@ from decouple import config
 
 #https://docs.djangoproject.com/en/2.1/howto/deployment/checklist/
 
-
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# using decouple means that configs will be pulled from the local .env file
-# these variables are defined (for heroku) in the heroku dashboard (done 27/11)
-
-SECRET_KEY = config('SECRET_KEY')
-
-DEBUG = config('DEBUG', cast=bool)
-
+# this will be overwritten
+# remains to be seen if this is actually required for local development
+SECRET_KEY = 'CHANGE_ME'
 
 # Database
 # https://docs.djangoproject.com/en/2.1/ref/settings/#databases
@@ -43,8 +45,7 @@ DATABASES = {
 }
 
 
-ALLOWED_HOSTS = ['0.0.0.0', 'localhost',
-                 'rats-nest-420.herokuapp.com']
+
 
 
 # Application definition
@@ -128,12 +129,12 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-# to make it heroku deployable
+# configures DATABASE_URL, ALLOWED_HOSTS, WhiteNoise (for static assets), Logging, and Heroku CI for your application.
 django_heroku.settings(locals())
-
 
 # this overwrites everything above
 # https://devcenter.heroku.com/articles/heroku-postgresql#connecting-in-python
-DATABASES['default'] = dj_database_url.config(default='postgres://rats_user:RatFriends420@localhost/rats_database',
-                                              conn_max_age=600)
-print(DATABASES)
+# default='postgres://rats_user:RatFriends420@localhost/rats_database'
+# DATABASES['default'] = dj_database_url.config(default='postgres://rats_user:RatFriends420@localhost/rats_database',
+#                                              conn_max_age=600)
+# print('DATABASES = ' + str(DATABASES))

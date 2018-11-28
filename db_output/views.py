@@ -7,7 +7,7 @@ import os, psycopg2
 
 # connect to DB
 DATABASE_URL = os.environ['DATABASE_URL']
-
+print(DATABASE_URL)
 
 def index(request):
     return HttpResponse("this is 'index' view of db_output <p> "
@@ -30,6 +30,8 @@ def postgreSQL(request):
     return HttpResponse('this will become something produced by our DB')
 
 def insert_test_player(request):
+
+    print()
 
     from .models import Player
     p = Player(proper_name='homer simpson', hometown='evergreen terrace')
