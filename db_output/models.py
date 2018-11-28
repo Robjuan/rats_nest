@@ -1,7 +1,7 @@
 from django.db import models
 
-# todo: this should be Players
-class Player(models.Model):
+
+class Players(models.Model):
     player_ID = models.AutoField(primary_key=True)
 
     # non-key
@@ -14,7 +14,7 @@ class Player(models.Model):
 
 class Teams(models.Model):
     team_ID = models.AutoField(primary_key=True)
-    players = models.ManyToManyField(Player)
+    players = models.ManyToManyField(Players)
     # ManyToMany doesn't take on_delete??
     # PROTECT will raise an error when the referenced obj (ie, the players?) are deleted
     # don't delete players if the team exists
@@ -60,7 +60,7 @@ class Games(models.Model):
 class Pulls(models.Model):
     pull_ID = models.AutoField(primary_key=True)
     # PROTECT will error if the player is deleted when pulls exist
-    player_ID = models.ForeignKey(Player,
+    player_ID = models.ForeignKey(Players,
                                   on_delete=models.PROTECT)
 
     # non-key
@@ -83,7 +83,7 @@ class Points(models.Model):
     # non-key
     point_elapsed_seconds = models.IntegerField()
     startingfence = models.CharField(max_length=30) # not 100% settled on this
-    ourscore_EOP = models.IntegerField() # EOP = end of point
+    ourscore_EOP = models.IntegerField()  # EOP = end of point
     theirscore_EOP = models.IntegerField()
     halfatend = models.BooleanField(default=False)
 
@@ -99,18 +99,18 @@ class PossessionEvents(models.Model):
     event_ID = models.AutoField(primary_key=True)
     possession_ID = models.ForeignKey(Possessions,
                                       on_delete=models.CASCADE)
-    players = models.ManyToManyField(Player,
+    players = models.ManyToManyField(Players,
                                      related_name='players_onfield')
     # if the possession is deleted, delete relevant events
-    passer = models.ForeignKey(Player,
+    passer = models.ForeignKey(Players,
                                on_delete=models.PROTECT,
                                blank=True,
                                related_name='passer')
-    receiver = models.ForeignKey(Player,
+    receiver = models.ForeignKey(Players,
                                  on_delete=models.PROTECT,
                                  blank=True,
                                  related_name='receiver')
-    defender = models.ForeignKey(Player,
+    defender = models.ForeignKey(Players,
                                  on_delete=models.PROTECT,
                                  blank=True,
                                  related_name='defender')
