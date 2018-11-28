@@ -17,5 +17,9 @@ Write code locally, test on local Heroku locall
 Commit to working_dev branch of repo
 
 Deploy:
+*** CHECK WITH PARTNER BEFORE DEPLOYING *** 
+
 Merge working_dev branch to master branch
+-- git checkout master
+-- git merge working_dev
 Master branch will be automatically deployed to Heroku

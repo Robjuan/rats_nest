@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/2.1/ref/settings/
 """
 
 import os, django_heroku
+import dj_database_url
+
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -22,6 +24,8 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'gk&viw^(q(6s-(1ps#)5x!520s4lt0f!%+x41ii)lgq=!-6qev'
 
+
+# TODO: rs @ 27/11 what is this
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
@@ -37,6 +41,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    'db_output'
 ]
 
 MIDDLEWARE = [
@@ -74,10 +80,11 @@ WSGI_APPLICATION = 'rats_nest.wsgi.application'
 # https://docs.djangoproject.com/en/2.1/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    }
+    # this is overwritten at the end of the file by dj_database_url
+    # 'default': {
+    #     'ENGINE': 'django.db.backends.sqlite3',
+    #     'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+    # }
 }
 
 
@@ -121,3 +128,7 @@ STATIC_URL = '/static/'
 
 # to make it heroku deployable
 django_heroku.settings(locals())
+
+# to make postgreSQL work
+# https://devcenter.heroku.com/articles/heroku-postgresql#connecting-in-python
+DATABASES['default'] = dj_database_url.config(conn_max_age=600, ssl_require=True)
