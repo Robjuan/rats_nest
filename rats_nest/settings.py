@@ -131,6 +131,9 @@ STATIC_URL = '/static/'
 # to make it heroku deployable
 django_heroku.settings(locals())
 
-# to make postgreSQL work
+
+# this overwrites everything above
 # https://devcenter.heroku.com/articles/heroku-postgresql#connecting-in-python
-DATABASES['default'] = dj_database_url.config(conn_max_age=600)
+DATABASES['default'] = dj_database_url.config(default='postgres://rats_user:RatFriends420@localhost/rats_database',
+                                              conn_max_age=600)
+print(DATABASES)

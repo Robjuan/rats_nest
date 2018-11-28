@@ -14,11 +14,18 @@ def db_view(request):
     # connect to DB
     DATABASE_URL = os.environ['DATABASE_URL']
 
-    print(DATABASE_URL)
+    print()
     conn = psycopg2.connect(DATABASE_URL, sslmode='allow')
     # open cursor
     cur = conn.cursor()
 
+    cur.execute("""SELECT table_name FROM information_schema.tables
+            WHERE table_schema = 'public'""")
+
+    display_val = []
+
+    for table in cur.fetchall():
+        display_val.append(table)
 
     return HttpResponse('this will become something produced by our DB')
 
