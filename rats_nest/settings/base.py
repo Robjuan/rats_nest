@@ -18,8 +18,6 @@ https://docs.djangoproject.com/en/2.1/ref/settings/
 """
 
 import os, django_heroku
-import dj_database_url
-from decouple import config
 
 #https://docs.djangoproject.com/en/2.1/howto/deployment/checklist/
 
@@ -32,19 +30,13 @@ SECRET_KEY = 'CHANGE_ME'
 
 # Database
 # https://docs.djangoproject.com/en/2.1/ref/settings/#databases
+#
 
-DATABASES = {
-     'default': {
-         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-         'NAME': config('DB_NAME'),
-         'USER': config('DB_USER'),
-         'PASSWORD': config('DB_PASS'),
-         'HOST': config('DB_HOST'),
-         'PORT': '',
-     }
-}
-
-
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql_psycopg2'
+#     }
+# }
 
 
 
@@ -130,11 +122,13 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 # configures DATABASE_URL, ALLOWED_HOSTS, WhiteNoise (for static assets), Logging, and Heroku CI for your application.
+# DATABASE_URL etc will be overwritten in child settings files but the rest is useful
 django_heroku.settings(locals())
 
-# this overwrites everything above
 # https://devcenter.heroku.com/articles/heroku-postgresql#connecting-in-python
-# default='postgres://rats_user:RatFriends420@localhost/rats_database'
-# DATABASES['default'] = dj_database_url.config(default='postgres://rats_user:RatFriends420@localhost/rats_database',
-#                                              conn_max_age=600)
 # print('DATABASES = ' + str(DATABASES))
+
+if os.environ.get('DEBUG'):
+    print('base settings loaded')
+
+

@@ -14,6 +14,4 @@ DATABASES = {
      }
 }
 
-django_heroku.settings(locals())
-
 print('heroku_production settings loaded')

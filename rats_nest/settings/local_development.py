@@ -1,5 +1,5 @@
 from .base import *
-#import dj_database_url
+import dj_database_url, os
 
 DEBUG = True
 
@@ -10,10 +10,10 @@ SECRET_KEY = 'CHANGE_ME'
 TIME_ZONE = 'UTC'
 # TIME_ZONE = 'US/Pacific'
 
-# DATABASES['default'] = dj_database_url.config(conn_max_age=600)
-
-django_heroku.settings(locals())
+DATABASES['default'] = dj_database_url.parse('postgres://rats_user:RatFriends420@localhost/rats_database',
+                                              conn_max_age=600)
 
 print('local development settings loaded')
-print('DATABASES = ' + str(DATABASES))
-print('DATABASEURL = ' + str(os.environ.get('DATABASE_URL')))
+
+if os.environ.get('DEBUG'):
+    print('DATABASES = ' + str(DATABASES))

@@ -38,3 +38,5 @@ def insert_test_player(request):
     p.save()
 
     print(Player.objects.all())
+
+    return HttpResponse('done!')
