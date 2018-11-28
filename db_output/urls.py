@@ -10,7 +10,8 @@ from . import views
 
 
 urlpatterns = [
-    path('postgreSQL', views.db_view, name='postgreSQL'),
+    path('postgreSQL', views.postgreSQL, name='postgreSQL'),
+    path('test', views.insert_test_player, name='test'),
     path('', views.index, name='index')
     # empty route catches every request
 ]

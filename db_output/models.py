@@ -1,6 +1,6 @@
 from django.db import models
 
-
+# todo: this should be Players
 class Player(models.Model):
     player_ID = models.AutoField(primary_key=True)
 
