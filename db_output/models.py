@@ -1,5 +1,10 @@
 from django.db import models
 
+# apparently convention says these object names should be singular
+# the abstract class can be thought of as a table
+# and instances of the class are records
+# so these definitions describe an instance, and should be singular?
+# nbd but food for thought
 
 class Players(models.Model):
     player_ID = models.AutoField(primary_key=True)
@@ -11,6 +16,8 @@ class Players(models.Model):
     position = models.CharField(max_length=30,
                                 blank=True)
 
+    def __str__(self):
+        return 'Player - [id:'+str(self.player_ID)+'] '+str(self.proper_name)
 
 class Teams(models.Model):
     team_ID = models.AutoField(primary_key=True)
@@ -25,6 +32,9 @@ class Teams(models.Model):
                               blank=True)
     division = models.CharField(max_length=30,
                                 blank=True)
+
+    def __str__(self):
+        return 'Team - [id:'+str(self.team_ID)+'] '+str(self.team_name)
 
 
 class Games(models.Model):
@@ -56,6 +66,10 @@ class Games(models.Model):
 
                                   blank=True)
 
+    def __str__(self):
+        return 'Game - [id:'+str(self.game_ID)+'] '+str(self.datetime)
+
+
 
 class Pulls(models.Model):
     pull_ID = models.AutoField(primary_key=True)
@@ -67,6 +81,9 @@ class Pulls(models.Model):
     hangtime = models.DecimalField(null=True,
                                    decimal_places=2,
                                    max_digits=4)
+
+    def __str__(self):
+        return 'Pull - [id:' + str(self.pull_ID) + '] player_id:' + str(self.player_ID)
 
 
 class Points(models.Model):
@@ -87,12 +104,19 @@ class Points(models.Model):
     theirscore_EOP = models.IntegerField()
     halfatend = models.BooleanField(default=False)
 
+    def __str__(self):
+        return 'Point - [id:'+str(self.point_ID)+'] game:'+str(self.game_ID) +\
+               ',[us|them]: ['+str(self.ourscore_EOP)+'|'+str(self.theirscore_EOP)+']'
+
 
 class Possessions(models.Model):
     possession_ID = models.AutoField(primary_key=True)
     point_ID = models.ForeignKey(Points,
                                  on_delete=models.CASCADE)
     # if the point is deleted, delete relevant possessions
+
+    def __str__(self):
+        return 'Possession - [id:'+str(self.possession_ID)+']'
 
 
 class PossessionEvents(models.Model):
@@ -121,3 +145,5 @@ class PossessionEvents(models.Model):
     event_type = models.CharField(max_length=30)
     elapsedtime = models.IntegerField()
 
+    def __str__(self):
+        return 'PossessionEvent - [id:'+str(self.event_ID)+']'

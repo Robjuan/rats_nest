@@ -24,6 +24,6 @@ from django.urls import path, include
 # when we need another app (db_input? advanced_stats?) we can keep it separate
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('admin/', admin.site.urls), #TODO: get admin portal working rs@11/27
     path('db_output/',include('db_output.urls'))
 ]
