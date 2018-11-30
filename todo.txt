@@ -1,0 +1,29 @@
+** Objectives:
+MINIMUM VIABLE PRODUCT:
+1. Build .csv upload capability
+2. Build .csv -> db parser
+3. Build db output capability
+    > likely hardcoded queries for now
+
+deploy specific - need to migrate on heroku end, then check db connection
+
+refactor the upload out into it's own 'app' within the django project
+>> currently sitting inside db_output
+
+** Methods:
+1. - upload_csv view w/ filestorage etc.
+   > needs to call the parser after upload
+   > file storage is not persistent
+
+2. build parser that will read .csv from storage
+   > must execute database input commands 
+   > this is very easy using django .save()
+
+3. simple read view (eg current postgreSQL view
+
+
+** Considerations:
+object names in models should(?) be singular
+
+should we define stuff like page titles in their templates?
+> or should we pass it in through views.py

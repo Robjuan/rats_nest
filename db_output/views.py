@@ -1,9 +1,9 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 
+
 def index(request):
-    return HttpResponse("this is 'index' view of db_output <p> "
-                        "if you didn't specify a url past /db_output/ you will come here")
+    return HttpResponse(render(request, 'db_output/index.html', {}))
 
 
 def postgreSQL(request):
@@ -17,12 +17,18 @@ def postgreSQL(request):
     return HttpResponse('this is produced by the DB:<p>' +
                         str(display_txt))
 
+
 def insert_test_player(request):
 
     from .models import Players
     p = Players(proper_name='homer simpson', hometown='evergreen terrace')
     p.save()
 
-    #print(Players.objects.all())
+    # print(Players.objects.all())
 
     return HttpResponse('done!')
+
+
+def upload_csv(request):
+
+    return HttpResponse('this is text')

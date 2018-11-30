@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="style.css">
+    <title>{% block title %}db_output default title{% endblock %}</title>
+</head>
+
+<body>
+
+    <div id="content">
+        {% block content %}{% endblock %}
+    </div>
+
+    <div id="sidebar">
+        {% block sidebar %}
+        <ul>
+            <li><a href="/admin">Admin</a></li>
+            <li><a href="/db_output/">db_output</a></li>
+        </ul>
+        {% endblock %}
+    </div>
+
+
+</body>
+</html>
