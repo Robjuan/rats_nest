@@ -1,9 +1,13 @@
+#####
+THERE ARE NO RESTRICTIONS ON UPLOADING TO THE DATABASE
+HENCE WE CANNOT DEPLOY TO HEROKU UNTIL AUTHENTICATION IS SETUP
+####
+
 ** Objectives:
 MINIMUM VIABLE PRODUCT:
-1. Build .csv upload capability
+1. Build .csv upload capability ** DONE
 2. Build .csv -> db parser
-3. Build db output capability
-    > likely hardcoded queries for now
+3. Build db output capability ** DONE
 
 deploy specific - need to migrate on heroku end, then check db connection
 
@@ -13,7 +17,6 @@ refactor the upload out into it's own 'app' within the django project
 ** Methods:
 1. - upload_csv view w/ filestorage etc.
    > needs to call the parser after upload
-   > file storage is not persistent
 
 2. build parser that will read .csv from storage
    > must execute database input commands 
@@ -26,4 +29,4 @@ refactor the upload out into it's own 'app' within the django project
 object names in models should(?) be singular
 
 should we define stuff like page titles in their templates?
-> or should we pass it in through views.py
+> or should we pass it in views.py

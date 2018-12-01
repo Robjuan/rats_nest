@@ -4,8 +4,10 @@
 
 {% block content %}
 
-upload file form goes here <p>
-    password form goes here
-</p>
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Upload</button>
+  </form>
 
 {% endblock %}

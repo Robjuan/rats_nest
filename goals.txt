@@ -1,0 +1,15 @@
+Eventual Goals:
+
+Upload csv to system to be handled, then ship it off to archive.
+
+Authenticate users to have them see all their stats. 
+Teams need to be able to control access to their stats.
+Probably best to control this on a per-game basis
+-- thus the person who takes the stats can control who reads it
+-- this means we need to store the uploader when they do it
+-- storing csv as model allows this and more, all good. 
+-- however it means the csv is stored inside the database. 
+---- is there a way to ship the actual storage offsite and store a pointer?
+
+A nice site?
+style.css

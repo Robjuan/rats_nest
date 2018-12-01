@@ -11,3 +11,5 @@ admin.site.register(Pulls)
 admin.site.register(Points)
 admin.site.register(Possessions)
 admin.site.register(PossessionEvents)
+
+admin.site.register(csvDocument)

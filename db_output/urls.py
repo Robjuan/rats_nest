@@ -10,8 +10,9 @@ from . import views
 
 
 urlpatterns = [
-    path('postgreSQL', views.postgreSQL, name='postgreSQL'),
-    path('test', views.insert_test_player, name='test'),
+    path('upload_csv', views.upload_csv, name='upload_csv'),
+    path('test_output', views.test_output, name='test_output'),
+    path('insert_test_data', views.insert_test_data, name='insert_test_data'),
     path('', views.index, name='index')
-    # empty route catches every request
+    # empty route catches every request ?
 ]

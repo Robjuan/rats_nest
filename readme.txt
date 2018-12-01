@@ -5,10 +5,11 @@ Eventually this will be:
 * db_output - make basic stats available
 * db_input - upload basic stats from UltiAnalytics ouput
 * rats_analysis - advanced analytics
-* the_nest - the database and server backend that powers all this
+* rats_nest - the backend / server etc that powers this
+
 
 This will be a web app done on Heroku, with Django as the framework
-
+PostgreSQL is our database.
 
 Workflow:
 

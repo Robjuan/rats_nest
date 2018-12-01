@@ -13,3 +13,6 @@
 #environment specific
 .env
 env/
+
+# raw stats
+*.csv

@@ -1,5 +1,18 @@
 from django.db import models
 
+# document upload - not for database
+
+
+class csvDocument(models.Model):
+    your_team_name = models.CharField(max_length=30)
+    description = models.CharField(max_length=255, blank=True)
+    file = models.FileField(upload_to='csv/')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return 'csv from '+str(self.your_team_name)+', uploaded at:'+str(self.uploaded_at)[:9]
+
+
 # apparently convention says these object names should be singular
 # the abstract class can be thought of as a table
 # and instances of the class are records
@@ -18,6 +31,7 @@ class Players(models.Model):
 
     def __str__(self):
         return 'Player - [id:'+str(self.player_ID)+'] '+str(self.proper_name)
+
 
 class Teams(models.Model):
     team_ID = models.AutoField(primary_key=True)
