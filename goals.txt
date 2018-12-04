@@ -11,5 +11,8 @@ Probably best to control this on a per-game basis
 -- however it means the csv is stored inside the database. 
 ---- is there a way to ship the actual storage offsite and store a pointer?
 
+
+https://wsvincent.com/django-user-authentication-tutorial-signup/
+
 A nice site?
 style.css

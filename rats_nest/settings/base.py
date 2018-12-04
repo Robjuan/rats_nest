@@ -68,7 +68,7 @@ ROOT_URLCONF = 'rats_nest.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [],  # db_output/templates/
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -120,6 +120,12 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.1/howto/static-files/
 
 STATIC_URL = '/static/'
+
+
+# page to be redirected to after successful login/out
+LOGIN_REDIRECT_URL = 'index'
+LOGOUT_REDIRECT_URL = 'index'
+
 
 # configures DATABASE_URL, ALLOWED_HOSTS, WhiteNoise (for static assets), Logging, and Heroku CI for your application.
 # DATABASE_URL etc will be overwritten in child settings files but the rest is useful

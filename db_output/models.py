@@ -1,8 +1,6 @@
 from django.db import models
 
-# document upload - not for database
-
-
+# document upload - not for stats analysis
 class csvDocument(models.Model):
     your_team_name = models.CharField(max_length=30)
     description = models.CharField(max_length=255, blank=True)

@@ -14,14 +14,22 @@
     <div id="sidebar">
 
         {% block sidebar %}
-
+        <hr>
         <p>
+        {% if user.is_authenticated %}
+            You are logged in as: {{ user.username }}!
+        {% else %}
+            You are not logged in -
+            <a href="{% url 'login' %}">login</a>
+        {% endif %}
+        </p>
         <b>Would you like to:</b>
         <ul>
-            <li><a href="/admin">Access the admin portal</a></li>
-            <li><a href="/db_output/">Go to the index of db_output</a></li>
-            <li><a href="/db_output/test_output">Check the output</a></li>
-            <li><a href="/db_output/csv_upload">Upload a new UA csv</a></li>
+            <li><a href="/admin">Access the admin portal</a></li> <!-- django backend is hardcoded -->
+            <li><a href="{% url 'index' %}">Go to the index of db_output</a></li>
+            <li><a href="{% url 'test_output' %}">Check the output</a></li>
+            <li><a href="{% url 'upload_csv' %}">Upload a new UA csv (requires login)</a></li>
+            <li><a href="{% url 'logout' %}">Logout</a></li>
         </ul>
         {% endblock %}
 
