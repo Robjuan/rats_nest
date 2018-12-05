@@ -31,10 +31,18 @@ def insert_test_data(request):
     return HttpResponse('You have inserted '+str(p))
 
 
+# the first time you go to a view, it will be with request.method = 'GET'
+# after you click submit, you will be sent back to that page with request.method = 'POST'
+# the form is then filled from the data which is now in the request and handled as you see fit
+
+
 def upload_csv(request):
     from .forms import csvDocumentForm
 
-    if request.method == 'POST':
+    # this permission check might be duplicative as it is also checked in the template
+    # TODO: this permission doesn't actually exist, but rob_development is a superuser so has_perm always returns True
+
+    if request.method == 'POST' and request.user.has_perm('db_output.can_upload_csv'):
         form = csvDocumentForm(request.POST, request.FILES)
         if form.is_valid():
 
@@ -44,7 +52,6 @@ def upload_csv(request):
 
             # METHOD 2 : save to the database as part of a model
             form.save()
-            # we need to save who took the stats to be able to restrict access
             # we need to save who took the stats to be able to restrict access
             # saving as a model allows this sort of shit
             # we can work on offsite storage of the csv later

@@ -4,10 +4,18 @@
 
 {% block content %}
 
+{% if perms.db_output.can_upload_csv %}
+
   <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
     {{ form.as_p }}
     <button type="submit">Upload</button>
   </form>
 
+{% else %}
+
+<h3> You do not have permission to upload csv</h3>
+<p><a href="{% url 'login' %}">Login here</a></p>
+
+{% endif %}
 {% endblock %}

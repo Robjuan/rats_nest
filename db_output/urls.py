@@ -7,8 +7,6 @@ from . import views
 # view is the view to call, httprequest as first arg rest as kwargs
 # kwargs are optional
 
-
-
 urlpatterns = [
     path('upload_csv', views.upload_csv, name='upload_csv'),
     path('test_output', views.test_output, name='test_output'),
