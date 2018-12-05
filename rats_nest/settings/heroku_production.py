@@ -1,4 +1,4 @@
-import os, django_heroku
+import os, django_heroku, dj_database_url
 from .base import *
 
 DEBUG = False
@@ -13,5 +13,7 @@ DATABASES = {
          'ENGINE': 'django.db.backends.postgresql_psycopg2'
      }
 }
+
+DATABASES['default'].update(dj_database_url.config())
 
 print('heroku_production settings loaded')

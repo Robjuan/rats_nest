@@ -26,3 +26,6 @@ Merge working_dev branch to master branch
 -- git checkout master
 -- git merge working_dev
 Log in to Heroku > Deploy > Manual Deploy (at bottom)
+
+* working_dev can be deployed to Heroku for testing if required. 
+* more important to keep master as always-working
