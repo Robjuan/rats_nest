@@ -1,0 +1,26 @@
+{% extends 'db_output/base.html' %}
+
+{% block title %} MVP - Output {% endblock %}
+
+{% block content %}
+<h2> This is step 1 on actual new work.</h2>
+
+<!-- form up top to select which game you'd like to check parse of -->
+
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Parse (not saving yet)</button>
+  </form>
+
+<!-- printed results below -->
+
+{% if results %}
+<hr>
+<h3> The below was produced by parse()</h3>
+
+{{ results }}
+
+{% endif %}
+
+{% endblock %}

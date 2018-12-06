@@ -1,19 +1,31 @@
 # this is where the magic happens
 # this file will parse UA-generated csv files and save them to models
 
-from .models import *
+import csv
 
+# running parse() before uploading a new csv causes an error on the remote build, but not local
 
-def parse():
-    from .models import csvDocument
+# select which file you'd like to parse
+# press go and it will parse and print whatever output
+# should check to see if objects exist before creating (or overwrite?)
+
+def parse(filename):
 
     display_txt = []
-    count = 0
-    for obj in csvDocument.objects.all():  # objects.all pulls every record from the csvDocument table
-        for line in obj.file:               # x.file pulls the value that x record in the file column, ie the csv
-            display_txt.append(str(line))   # ready for reading like any local csv file :)
-            count += 1
-            if count > 10:
-                break
+
+    with open(filename) as csv_file:  # i'm not sure this will work on our remote hosting
+        csv_reader = csv.reader(csv_file, delimiter=',')
+
+        line_count = 0
+        for row in csv_reader:
+            if line_count == 0:
+                # this is the column header rows
+                pass
+            display_txt.append(row)
+
+
+            line_count += 1
 
     return display_txt
+
+

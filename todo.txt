@@ -1,32 +1,14 @@
-#######
-THERE ARE NO RESTRICTIONS ON UPLOADING TO THE DATABASE
-HENCE WE CANNOT DEPLOY TO HEROKU UNTIL AUTHENTICATION IS SETUP
-#######
 
-** Objectives:
+parse() crashes if accessed before uploading new csv - only remotely ???
+
+** Objective:
 MINIMUM VIABLE PRODUCT:
 1. Build .csv upload capability ** DONE
 2. Build .csv -> db parser
 3. Build db output capability ** DONE
 
-deploy specific - need to migrate on heroku end, then check db connection
-
-refactor the upload out into it's own 'app' within the django project
->> currently sitting inside db_output
-
-** Methods:
-1. - upload_csv view w/ filestorage etc.
-   > needs to call the parser after upload
-
-2. build parser that will read .csv from storage
-   > must execute database input commands 
-   > this is very easy using django .save()
-
-3. simple read view (eg current postgreSQL view
+Parser to be built.
+Then a way to request stats other than showing most recently uploaded.
 
 
-** Considerations:
-object names in models should(?) be singular
 
-should we define stuff like page titles in their templates?
-> or should we pass it in views.py

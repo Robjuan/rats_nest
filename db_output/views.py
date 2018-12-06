@@ -13,11 +13,32 @@ def index(request):
 def test_output(request):
 
     from .ua_parser import parse
+    from .forms import fileSelector
+    from .models import csvDocument
 
-    display_txt = parse()
+    filelist = []
 
-    return HttpResponse('this is produced by the parse() function<p>' +
-                        str(display_txt))
+    # apparently dyanmic choices should be done via foreignkey?
+    # choices needs a list of 2-tuples, "[value, humanreadable]
+
+    for obj in csvDocument.objects.all():  # returns FileField?
+        filelist.append((obj.file, str(obj)))
+
+    if request.method == 'POST':
+        form = fileSelector(request.POST, choices=filelist)
+        if form.is_valid():
+
+            # print('cleaned_data: ' + str(form.cleaned_data))
+
+            filename = form.cleaned_data['filechoice']
+            display_txt = parse(filename)
+
+            return render(request, 'db_output/show_output.html', {'form': form, 'results': display_txt})
+
+    else:
+        form = fileSelector(choices=filelist)
+
+    return render(request, 'db_output/show_output.html', {'form': form})
 
 
 def insert_test_data(request):
