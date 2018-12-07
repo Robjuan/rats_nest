@@ -8,7 +8,10 @@ MINIMUM VIABLE PRODUCT:
 3. Build db output capability ** DONE
 
 Parser to be built.
-Then a way to request stats other than showing most recently uploaded.
+
+REMOTE ONLY ISSUES (usually storage/db related)
+after uploading a new csv, fetching works
+before that, no fetch works??
 
 
 

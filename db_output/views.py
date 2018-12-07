@@ -21,7 +21,7 @@ def test_output(request):
     # apparently dyanmic choices should be done via foreignkey?
     # choices needs a list of 2-tuples, "[value, humanreadable]
 
-    for obj in csvDocument.objects.all():  # returns FileField?
+    for obj in csvDocument.objects.all():      # hope this isn't too resource-intensive
         filelist.append((obj.file, str(obj)))
 
     if request.method == 'POST':
@@ -31,8 +31,9 @@ def test_output(request):
             # print('cleaned_data: ' + str(form.cleaned_data))
 
             filename = form.cleaned_data['filechoice']
-            display_txt = parse(filename)
+            # the form always resets to the first option, how to get it to remember?
 
+            display_txt = parse(filename)
             return render(request, 'db_output/show_output.html', {'form': form, 'results': display_txt})
 
     else:

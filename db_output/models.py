@@ -8,7 +8,7 @@ class csvDocument(models.Model):
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return 'csv from '+str(self.your_team_name)+', uploaded at: '+str(self.uploaded_at)[:9]
+        return 'csv from '+str(self.your_team_name)+', uploaded at: '+str(self.uploaded_at)[:10]
 
 
 # apparently convention says these object names should be singular
@@ -75,7 +75,6 @@ class Games(models.Model):
     location = models.CharField(max_length=30,
                                 blank=True)
     conditions = models.CharField(max_length=30,
-
                                   blank=True)
 
     def __str__(self):
