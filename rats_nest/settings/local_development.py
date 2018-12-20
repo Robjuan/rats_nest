@@ -1,3 +1,7 @@
+# this shit requires the following environment variable:
+# DJANGO_SETTINGS_MODULE=rats_nest.settings.local_development
+
+
 from .base import *
 import dj_database_url, os
 
