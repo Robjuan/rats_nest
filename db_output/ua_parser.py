@@ -160,6 +160,8 @@ def parse(filename):
 
     csv_file.close()
     return 'SUCCESSFULLY REACHED END OF PARSE'
+
+
 # handle_x functions always return the object they created/found
 
 
@@ -246,6 +248,11 @@ if not, create new player and return pk for the conversion dict
 
 conversion dict will be { csv_name : actual_player_pk }
 
+handle_check_player just then needs to do:
+
+player = models.Player.object where pk = conversion_dict[csv_name]
+
+return player
 
 
 

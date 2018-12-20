@@ -4,12 +4,12 @@ from django.contrib import admin
 
 from .models import *
 
-admin.site.register(Players)
-admin.site.register(Teams)
-admin.site.register(Games)
-admin.site.register(Pulls)
-admin.site.register(Points)
-admin.site.register(Possessions)
-admin.site.register(PossessionEvents)
+admin.site.register(Player)
+admin.site.register(Team)
+admin.site.register(Game)
+admin.site.register(Pull)
+admin.site.register(Point)
+admin.site.register(Possession)
+admin.site.register(Event)
 
 admin.site.register(csvDocument)
