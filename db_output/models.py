@@ -1,6 +1,8 @@
 from django.db import models
 
+
 # document upload - not for stats analysis
+
 class csvDocument(models.Model):
     your_team_name = models.CharField(max_length=30)
     description = models.CharField(max_length=255, blank=True)
@@ -10,12 +12,8 @@ class csvDocument(models.Model):
     def __str__(self):
         return 'csv from '+str(self.your_team_name)+', uploaded at: '+str(self.uploaded_at)[:10]
 
+# statistic storage
 
-# apparently convention says these object names should be singular
-# the abstract class can be thought of as a table
-# and instances of the class are records
-# so these definitions describe an instance, and should be singular?
-# nbd but food for thought
 
 class Player(models.Model):
     player_ID = models.AutoField(primary_key=True)
@@ -29,6 +27,9 @@ class Player(models.Model):
 
     nickname = models.CharField(max_length=255,
                                 blank=True)
+
+    csv_names = models.CharField(max_length=255,
+                                 blank=True)  # comma separated values in a string
 
     def __str__(self):
         return 'Player - [id:'+str(self.player_ID)+'] '+str(self.proper_name)

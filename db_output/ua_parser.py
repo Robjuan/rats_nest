@@ -4,6 +4,24 @@
 import csv
 from . import models
 
+
+def get_player_names(filename):
+    # shorter version that pulls out every player mentioned in the stats
+    # used for manual data validation
+
+    csv_file = open(filename)
+    csv_reader = csv.DictReader(csv_file, delimiter=',')
+
+    player_name_list = []
+    for line in csv_reader:
+        for x in range(0, 27):
+            num = 'Player ' + str(x)
+            if line[num] not in player_name_list:
+                player_name_list.append(line[num])
+
+    return player_name_list
+
+
 # running parse() before uploading a new csv causes an error on the remote build, but not local
 
 # select which file you'd like to parse
@@ -40,6 +58,14 @@ from . import models
 
 
 def parse(filename):
+    # should also be taking in any data that is required that cannot be pulled from the file
+    # team_name
+    # conversion_dict (see bottom)
+    # optional: opposing game/team
+
+
+
+
     csv_file = open(filename)
     csv_reader = csv.DictReader(csv_file, delimiter=',')
     # DictReader means that each line is a dictionary, with name:value determined by column name:column value
@@ -68,6 +94,12 @@ def parse(filename):
             this_game = models.Game()
             this_game.datetime = line['Date/Time']
             this_game.tournament_name = line['Tournamemnt']  # UA csv has typo in column name "Tournamemnt"
+
+            # NEED TO SET TEAM
+            # where can pull team name from - additional data required
+
+
+            this_game.save()
 
             # how to set opposing game deatils and stuff
             # manually subsequently?
@@ -184,6 +216,9 @@ def handle_new_pull(hangtime=None):
 
 
 def handle_new_point(game_ID, line, halfatend=False):
+    print('entering HNP')
+    #print('line ='+str(line))
+    print('gameid = '+str(game_ID))
     this_point = models.Point()
     this_point.game_ID = game_ID
     this_point.point_elapsed_seconds = line['Point Elapsed Seconds']

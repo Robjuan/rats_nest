@@ -8,6 +8,7 @@ from . import views
 # kwargs are optional
 
 urlpatterns = [
+    path('confirm_upload_details', views.confirm_upload_details, name='confirm_upload_details'),
     path('upload_csv', views.upload_csv, name='upload_csv'),
     path('test_output', views.test_output, name='test_output'),
     path('insert_test_data', views.insert_test_data, name='insert_test_data'),
