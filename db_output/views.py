@@ -89,27 +89,68 @@ def confirm_upload_details(request):
     from .models import Player
     from .forms import ValidationForm
 
-    # print(request.session['player_list'])
-    # appears to be the same (full) list every time we come here
+    player_list = request.session['player_list']
+    # TODO: if there are no more players to confirm, this should bounce us out to a confirmation view
+    if not player_list:
+        return HttpResponseRedirect('/')
 
-    csv_name = request.session['player_list'].pop()
+    csv_name = player_list.pop()  # calling pop directly on session doesn't work - this does
+    request.session['player_list'] = player_list
 
     match = None
     for stored_player in Player.objects.all():
         if csv_name in stored_player.csv_names:
             match = str(stored_player)
 
-    match = 'Fake Match'
     name_validation_form = ValidationForm(match=match)
 
     if request.method == 'POST':
-        name_validation_form = ValidationForm(request.POST)
-        # this doesn't take in match, hence thinks that the textinput is required - not posting properly?
+        name_validation_form = ValidationForm(request.POST, match=match)
         if name_validation_form.is_valid():
             results = name_validation_form.cleaned_data
 
+            # conversion dict will be { csv_name : actual_player_pk }
+            new_dict = request.session['conversion_dict']
+
+            if results['selection'] == 'provided':
+                # find player object based on match, put in pk
+                new_dict[csv_name] = stored_player.player_ID
+                stored_player.csv_names.append(','+csv_name)
+
+            elif results['selection'] == 'custom':
+                # create new Player, input Proper name as given and csv_name as csv_name
+                given_name = results['custom_name']
+                new_player = Player(proper_name=given_name, csv_names=csv_name)
+                new_dict[csv_name] = new_player.player_ID
+
+            request.session['conversion_dict'] = new_dict
             return render(request, 'db_output/confirm_upload_details.html',
                           context={'form': name_validation_form, 'csv_name': csv_name, 'results': results})
-
-    return render(request, 'db_output/confirm_upload_details.html',
+    else:
+        request.session['conversion_dict'] = {}
+        return render(request, 'db_output/confirm_upload_details.html',
                   context={'form': name_validation_form, 'csv_name': csv_name})
+
+
+def confirm_conversion_dict(request):
+
+    # TODO: handle confirm/cancel buttons
+    # cancel can just bounce them back to test_output
+    # confirm can send them to parse!!!!!!!!
+
+    if request.method == 'POST':
+        return HttpResponseRedirect('display_parse_results')
+    else:
+        content = request.session['conversion_dict']
+        return render(request, 'db_output/base.html', context={'content':content})
+
+
+def display_parse_results(request):
+
+    from .ua_parser import parse
+
+    content = parse(request.session['filename'], request.session['conversion_dict'])
+    # currently this just gives us a success indicating string
+
+
+    return render(request, 'db_output/base.html', context={'content':content})

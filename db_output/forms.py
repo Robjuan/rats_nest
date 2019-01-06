@@ -27,7 +27,7 @@ class fileSelector(forms.Form):
 class ValidationForm(forms.Form):
 
     choices = (
-        ('provided', 'no match, custom required'),
+        ('provided', 'no match, custom will be used'),
         ('custom', 'custom')
     )
 

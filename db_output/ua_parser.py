@@ -57,7 +57,7 @@ def get_player_names(filename):
 # Elapsed Time (sec)
 
 
-def parse(filename):
+def parse(filename, conversion_dict):
     # should also be taking in any data that is required that cannot be pulled from the file
     # team_name
     # conversion_dict (see bottom)
@@ -158,15 +158,15 @@ def parse(filename):
 
         for player_col in player_col_list:
             if line[player_col]:
-                player = handle_check_player(line[player_col])
+                player = handle_check_player(conversion_dict[line[player_col]])
                 this_event.players.add(player)  # this is building the manytomany
                 this_event.save()
 
         if line['Defender']:
-            this_event.defender = handle_check_player(line['Defender'])
+            this_event.defender = handle_check_player(conversion_dict[line['Defender']])
         else:
-            this_event.passer = handle_check_player(line['Passer'])
-            this_event.receiver = handle_check_player(line['Receiver'])
+            this_event.passer = handle_check_player(conversion_dict[line['Passer']])
+            this_event.receiver = handle_check_player(conversion_dict[line['Receiver']])
 
         this_event.save()
 
@@ -240,55 +240,13 @@ def handle_new_possession(point_ID):
     return this_possession
 
 
-def handle_check_player(player_name, conversion_dict=None):
+def handle_check_player(player_pk):
     # check if a Player object for this player exists
 
-    #### MVP - assume input name is for reals name 
+    # get player by pk # TODO: there's a good django way to do this
+    # if it doesn't exist - do something
+    # should always exist if the pk exists
 
     for player in models.Player.objects.all():
-        if player.proper_name == player_name:
+        if player.player_ID == player_pk:
             return player
-        else:
-            this_player = models.Player()
-            this_player.proper_name = player_name
-
-            this_player.save()
-            return this_player
-
-"""
-
-# Player Check on Upload Flow:
-pre: user logs in, navigates to "upload csv"
-
-upload file form , 
-
-"Please confirm the players on your team to avoid duplicates being created:
-
-for players present in data, generate list of similar entries for that player, offer up as options
-include 'no matches present, create new player' option - allow custom name to be defined
- # provide ID , allow entering of ID to confirm player
- # how can we control who is allowed to upload stats for a player
- 
-generate dictionary for conversion
-use that during upload to ensure actual player used
- 
-# conversion_dict needs to be created before we are in parse()
-
-loop over all lines in the file, pull out every unique player name used
-for each of those, offer up "similars" # todo: how
-select one or provide a new "proper name" - will create a new player for you
-     - ideally all presented on the one screen (1-5x radio buttons per csv_name)
-if existing selected, fetch pk and put in the conversion dict
-if not, create new player and return pk for the conversion dict
-
-conversion dict will be { csv_name : actual_player_pk }
-
-handle_check_player just then needs to do:
-
-player = models.Player.object where pk = conversion_dict[csv_name]
-
-return player
-
-
-
-"""
