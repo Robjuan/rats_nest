@@ -94,24 +94,22 @@ def confirm_upload_details(request):
 
     csv_name = request.session['player_list'].pop()
 
-    name_choices = []
+    match = None
     for stored_player in Player.objects.all():
         if csv_name in stored_player.csv_names:
-            name_choices.append([stored_player, str(stored_player)])
+            match = str(stored_player)
 
-    if not name_choices:
-        name_choices.append(('no match', 'no match'))
-
-    name_validation_form = ValidationForm()
+    match = 'Fake Match'
+    name_validation_form = ValidationForm(match=match)
 
     if request.method == 'POST':
         name_validation_form = ValidationForm(request.POST)
+        # this doesn't take in match, hence thinks that the textinput is required - not posting properly?
         if name_validation_form.is_valid():
             results = name_validation_form.cleaned_data
 
             return render(request, 'db_output/confirm_upload_details.html',
                           context={'form': name_validation_form, 'csv_name': csv_name, 'results': results})
 
-
     return render(request, 'db_output/confirm_upload_details.html',
-                      context={'form': name_validation_form, 'csv_name': csv_name})
+                  context={'form': name_validation_form, 'csv_name': csv_name})

@@ -27,8 +27,8 @@ class fileSelector(forms.Form):
 class ValidationForm(forms.Form):
 
     choices = (
-        ('provided','provided'),
-        ('custom','custom')
+        ('provided', 'no match, custom required'),
+        ('custom', 'custom')
     )
 
     selection = forms.ChoiceField(
@@ -37,12 +37,18 @@ class ValidationForm(forms.Form):
         label="", required=False)
 
     def __init__(self, data=None, *args, **kwargs):
-        if 'choices' in kwargs:
-            choices = kwargs.pop('choices')
-            self.fields['custom_name'].choices = choices
+        if 'match' in kwargs:
+            match = kwargs.pop('match')
+        else:
+            match = None
 
         super(ValidationForm, self).__init__(data, *args, **kwargs)
 
-        # If 'later' is chosen, set send_date as required
+        if match:
+            self.fields['selection'].choices = (('provided', match), ('custom', 'custom'))
+
+        # charfield only NOT required if both a valid match avail, and that match is picked
         if data and data.get('selection', None) == 'custom':
+            self.fields['custom_name'].required = True
+        if not match:
             self.fields['custom_name'].required = True
