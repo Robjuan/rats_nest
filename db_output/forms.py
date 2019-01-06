@@ -1,5 +1,4 @@
 from django import forms
-from .xorformfields.forms import MutuallyExclusiveValueField, MutuallyExclusiveRadioWidget
 
 from .models import csvDocument
 
@@ -25,35 +24,25 @@ class fileSelector(forms.Form):
             self.initial = selected
 
 
-class playerNameValidationForm(forms.Form):
-    def __init__(self, *args, **kwargs):
+class ValidationForm(forms.Form):
+
+    choices = (
+        ('provided','provided'),
+        ('custom','custom')
+    )
+
+    selection = forms.ChoiceField(
+        choices=choices, widget=forms.RadioSelect)
+    custom_name = forms.CharField(
+        label="", required=False)
+
+    def __init__(self, data=None, *args, **kwargs):
         if 'choices' in kwargs:
             choices = kwargs.pop('choices')
-        else:
-            choices = (['default','default'],['default','default'])
+            self.fields['custom_name'].choices = choices
 
-        if 'label' in kwargs:
-            label = kwargs.pop('label')
+        super(ValidationForm, self).__init__(data, *args, **kwargs)
 
-        super(playerNameValidationForm, self).__init__(*args, **kwargs)
-
-        xor_fields = MutuallyExclusiveValueField(
-            fields=(forms.CharField(), forms.CharField()),
-            widget=MutuallyExclusiveRadioWidget(widgets=(
-                forms.Select(choices=choices),
-                forms.TextInput(),  # TODO: give this a default value or make it not required (pref 2nd)
-            )))
-
-        if label:
-            xor_fields.label = label
-
-        self.fields['xor_fields'] = xor_fields
-
-
-class testNameValidationForm(forms.Form):
-    csv_name = MutuallyExclusiveValueField(
-        fields=(forms.CharField(), forms.CharField()),
-        widget=MutuallyExclusiveRadioWidget(widgets=(
-            forms.Select(choices=(['1','2'],['4','5'])),
-            forms.TextInput(),
-        )))
+        # If 'later' is chosen, set send_date as required
+        if data and data.get('selection', None) == 'custom':
+            self.fields['custom_name'].required = True

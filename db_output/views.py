@@ -12,7 +12,7 @@ def index(request):
 
 def test_output(request):
 
-    from .ua_parser import parse
+    from .ua_parser import parse, get_player_names
     from .forms import fileSelector
     from .models import csvDocument
 
@@ -37,6 +37,8 @@ def test_output(request):
             #return render(request, 'db_output/show_output.html', {'form': form, 'results': display_txt})
 
             request.session['filename'] = filename
+            request.session['player_list'] = get_player_names(filename)
+
             return HttpResponseRedirect('confirm_upload_details')
     else:
         form = fileSelector(choices=filelist)
@@ -85,62 +87,31 @@ def upload_csv(request):
 def confirm_upload_details(request):
 
     from .models import Player
-    from .forms import playerNameValidationForm
-    from .ua_parser import get_player_names
+    from .forms import ValidationForm
 
-    request.session['player_list'] = get_player_names(request.session['filename'])
+    # print(request.session['player_list'])
+    # appears to be the same (full) list every time we come here
 
-    # pull filename from session
-    # pull all players mentioned
-    # for each player, come back here
-    if request.method == 'GET':
+    csv_name = request.session['player_list'].pop()
 
-        csv_name = request.session['player_list'].pop()
+    name_choices = []
+    for stored_player in Player.objects.all():
+        if csv_name in stored_player.csv_names:
+            name_choices.append([stored_player, str(stored_player)])
 
-        name_choices = []
-        for stored_player in Player.objects.all():
-            if csv_name in stored_player.csv_names:
-                name_choices.append([stored_player, str(stored_player)])
+    if not name_choices:
+        name_choices.append(('no match', 'no match'))
 
-        if not name_choices:
-            name_choices.append(('no player', 'no player'))
+    name_validation_form = ValidationForm()
 
-        game_details_form = playerNameValidationForm(choices=name_choices,
-                                                     label=csv_name)
-
-        return render(request, 'db_output/confirm_upload_details.html',
-                      context={'csv_name': csv_name, 'game_details_form': game_details_form})
-
-    elif request.method == 'POST':
-        game_details_form = playerNameValidationForm(request.POST,choices=(['11','22'],['33','44']),
-                                             label='default_label')
-        if game_details_form.is_valid():
-
-            print(str(game_details_form.cleaned_data))
-
-            csv_name = request.session['player_list'].pop()
-
-            name_choices = []
-            for stored_player in Player.objects.all():
-                if csv_name in stored_player.csv_names:
-                    name_choices.append([stored_player, str(stored_player)])
-
-            if not name_choices:
-                name_choices.append(('no player', 'no player'))
-
-            game_details_form = playerNameValidationForm(choices=name_choices,
-                                                         label=csv_name)
+    if request.method == 'POST':
+        name_validation_form = ValidationForm(request.POST)
+        if name_validation_form.is_valid():
+            results = name_validation_form.cleaned_data
 
             return render(request, 'db_output/confirm_upload_details.html',
-                          {'csv_name': csv_name, 'game_details_form': game_details_form})
+                          context={'form': name_validation_form, 'csv_name': csv_name, 'results': results})
 
-
-
-    else:
-        raise AssertionError # shouldn't be here
-
-    game_details_form = playerNameValidationForm(choices=(['testc1','testc2'],['samplec1','samplec2']),
-                                                 label='this is a label')
 
     return render(request, 'db_output/confirm_upload_details.html',
-                  context={'csv_name': csv_name, 'game_details_form': game_details_form})
+                      context={'form': name_validation_form, 'csv_name': csv_name})
