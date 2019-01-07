@@ -8,10 +8,11 @@ from . import views
 # kwargs are optional
 
 urlpatterns = [
+    path('display_parse_results', views.display_parse_results, name='display_parse_results'),
     path('confirm_upload_details', views.confirm_upload_details, name='confirm_upload_details'),
     path('upload_csv', views.upload_csv, name='upload_csv'),
     path('test_output', views.test_output, name='test_output'),
     path('insert_test_data', views.insert_test_data, name='insert_test_data'),
     path('', views.index, name='index')
-    # empty route catches every request ?
+    # empty route catches every leftover request ?
 ]

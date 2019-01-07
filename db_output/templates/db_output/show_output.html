@@ -3,23 +3,31 @@
 {% block title %} MVP - Output {% endblock %}
 
 {% block content %}
-<h2> This is step 1 on actual new work.</h2>
 
-<!-- form up top to select which game you'd like to check parse of -->
+{% if form %}
+
+  <h3> Please select a file to put through the parse data flow.</h3>
 
   <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
     {{ form.as_p }}
-    <button type="submit">Parse (not saving yet)</button>
+    <button type="submit">Validate</button>
   </form>
 
-<!-- printed results below -->
+{% endif %}
+
 
 {% if results %}
-<hr>
-<h3> The below was produced by parse()</h3>
 
-{{ results }}
+    <h3> The below conversion dictionary was created based on your validation inputs.<br></h3>
+    <h4>Confirm will save your inputs and take you to the results of the parser.<br>
+    Cancel will return you to the file select page.</h4>
+
+    {{ results }}
+
+    <p>
+    <a class="btn" href="{% url 'display_parse_results' %}">Confirm</a><br>
+    <a class="btn" href="{% url 'test_output' %}">Cancel</a>
 
 {% endif %}
 

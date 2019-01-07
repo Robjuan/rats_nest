@@ -242,11 +242,5 @@ def handle_new_possession(point_ID):
 
 def handle_check_player(player_pk):
     # check if a Player object for this player exists
-
-    # get player by pk # TODO: there's a good django way to do this
-    # if it doesn't exist - do something
-    # should always exist if the pk exists
-
-    for player in models.Player.objects.all():
-        if player.player_ID == player_pk:
-            return player
+    # this doesn't do any checking
+    return models.Player.objects.get(pk=player_pk)
