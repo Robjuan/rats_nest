@@ -19,7 +19,7 @@ def test_output(request):
     filelist = []
 
     # apparently dyanmic choices should be done via foreignkey?
-    # choices needs a list of 2-tuples, "[value, humanreadable]
+    # choices needs a list of 2-tuples, [value, humanreadable]
 
     for obj in csvDocument.objects.all():      # hope this isn't too resource-intensive
         filelist.append((obj, str(obj)))
@@ -154,13 +154,16 @@ def display_parse_results(request):
 
     # we get to this view from confirm being pushed # TODO: make sure that's the only way
 
+    all_players = []
     for player_pk in request.session['matched_to_update']:
         p = models.Player.objects.get(pk=player_pk)
         p.save()
+        all_players.append(p)
 
     for given_name, csv_names in request.session['nonmatched_to_create']:
         p = models.Player(proper_name=given_name, csv_names=csv_names)
         p.save()
+        all_players.append(p)
 
     # creating the player objects can happen here, and therefore creating the team object is ok
     # both should be persistent beyond the scope of a single csv, and thus parse call
@@ -176,8 +179,10 @@ def display_parse_results(request):
             new_team.save()
             team_obj_pk = new_team.team_ID
 
-
-    # TODO: ADD PLAYERS TO TEAM !!!
+    this_team = models.Team.objects.get(pk=team_obj_pk)
+    for player in all_players:
+        # establish m2m relationship
+        this_team.Players.add(player.player_ID)  # TODO: hows teh syntax on this one
 
     content = parse(request.session['file_obj_pk'], team_obj_pk, request.session['conversion_dict'])
     # currently this just gives us a success indicating string

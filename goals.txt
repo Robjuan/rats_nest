@@ -15,8 +15,9 @@ Users creating their own usernames - can then only upload new csvs, no modificat
 https://wsvincent.com/django-user-authentication-tutorial-signup/
 
 A nice site?, style.css
-
-object names in models should(?) be singular
-
+	
 should we define stuff like page titles in their templates?
-> or should we pass it in views.py
+> if it's a single use template, sure. if planning to reuse, no.
+
+validate team names more meaningfully than checking ==
+provide places for users to input all the additional data

@@ -9,15 +9,15 @@ Eventually this will be:
 This is a web app done on Heroku, with Django as the framework.
 PostgreSQL is our database.
 
-
-
-
-
-
 Workflow:
 
 ## Active Development:
 ensure running using 'local_development' settings, or custom
+*** to ensure: 
+set Environment Variable 'DJANGO_SETTINGS_MODULE' to 'rats_nest.settings.local_development'
+on mac this is "export DJANGO_SETTINGS_MODULE rats_nest.settings.local_development'
+
+
 Write code locally
 run heroku local to test
 Commit to working_dev branch of repo
