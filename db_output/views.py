@@ -182,7 +182,7 @@ def display_parse_results(request):
     this_team = models.Team.objects.get(pk=team_obj_pk)
     for player in all_players:
         # establish m2m relationship
-        this_team.Players.add(player.player_ID)  # TODO: hows teh syntax on this one
+        this_team.Players.add(player.player_ID)
 
     content = parse(request.session['file_obj_pk'], team_obj_pk, request.session['conversion_dict'])
     # currently this just gives us a success indicating string
