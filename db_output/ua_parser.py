@@ -5,10 +5,11 @@ import csv
 from . import models
 
 
-def get_player_names(filename):
+def get_player_names(file_obj_pk):
     # shorter version that pulls out every player mentioned in the stats
     # used for manual data validation
 
+    filename = models.csvDocument.objects.get(pk=file_obj_pk).file
     csv_file = open(filename)
     csv_reader = csv.DictReader(csv_file, delimiter=',')
 
@@ -57,15 +58,13 @@ def get_player_names(filename):
 # Elapsed Time (sec)
 
 
-def parse(filename, conversion_dict):
+def parse(file_obj_pk, team_obj_pk, conversion_dict):
     # should also be taking in any data that is required that cannot be pulled from the file
     # team_name
     # conversion_dict (see bottom)
     # optional: opposing game/team
 
-
-
-
+    filename = models.csvDocument.objects.get(pk=file_obj_pk).file
     csv_file = open(filename)
     csv_reader = csv.DictReader(csv_file, delimiter=',')
     # DictReader means that each line is a dictionary, with name:value determined by column name:column value
@@ -94,10 +93,8 @@ def parse(filename, conversion_dict):
             this_game = models.Game()
             this_game.datetime = line['Date/Time']
             this_game.tournament_name = line['Tournamemnt']  # UA csv has typo in column name "Tournamemnt"
-
-            # NEED TO SET TEAM
-            # where can pull team name from - additional data required
-
+            this_game.file_model = file_obj_pk
+            this_game.team_ID = team_obj_pk
 
             this_game.save()
 
@@ -242,5 +239,6 @@ def handle_new_possession(point_ID):
 
 def handle_check_player(player_pk):
     # check if a Player object for this player exists
-    # this doesn't do any checking
+    # TODO: this doesn't do any checking
     return models.Player.objects.get(pk=player_pk)
+

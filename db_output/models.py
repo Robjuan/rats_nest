@@ -39,8 +39,6 @@ class Team(models.Model):
     team_ID = models.AutoField(primary_key=True)
     players = models.ManyToManyField(Player)
     # ManyToMany doesn't take on_delete??
-    # PROTECT will raise an error when the referenced obj (ie, the players?) are deleted
-    # don't delete players if the team exists
 
     # non-key
     team_name = models.CharField(max_length=30)
@@ -71,6 +69,9 @@ class Game(models.Model):
                                          blank=True,
                                          null=True,
                                          related_name='opposition_game_id')
+
+    file_model = models.ForeignKey(csvDocument,
+                                   on_delete=models.PROTECT)
 
     # non-key
     datetime = models.DateTimeField()

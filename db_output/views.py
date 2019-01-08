@@ -12,7 +12,7 @@ def index(request):
 
 def test_output(request):
 
-    from .ua_parser import parse, get_player_names
+    from .ua_parser import get_player_names
     from .forms import fileSelector
     from .models import csvDocument
 
@@ -22,28 +22,20 @@ def test_output(request):
     # choices needs a list of 2-tuples, "[value, humanreadable]
 
     for obj in csvDocument.objects.all():      # hope this isn't too resource-intensive
-        filelist.append((obj.file, str(obj)))
+        filelist.append((obj, str(obj)))
 
     if request.method == 'POST':
         form = fileSelector(request.POST, choices=filelist)
         if form.is_valid():
 
-            # print('cleaned_data: ' + str(form.cleaned_data))
-
-            filename = form.cleaned_data['filechoice']
-            # the form always resets to the first option, how to get it to remember?
-
-            # display_txt = parse(filename)
-            #return render(request, 'db_output/show_output.html', {'form': form, 'results': display_txt})
-
-            request.session['filename'] = filename
-            request.session['player_list'] = get_player_names(filename)
+            fileobj = form.cleaned_data['filechoice']
+            request.session['file_obj_pk'] = fileobj.id
+            request.session['player_list'] = get_player_names(fileobj.file)
 
             return HttpResponseRedirect('confirm_upload_details')
     else:
         form = fileSelector(choices=filelist)
-
-    return render(request, 'db_output/show_output.html', {'form': form})
+        return render(request, 'db_output/show_output.html', {'form': form})
 
 
 def insert_test_data(request):
@@ -80,8 +72,7 @@ def upload_csv(request):
             return HttpResponseRedirect('test_output')  # show if something got added
     else:
         form = csvDocumentForm()
-
-    return render(request, 'db_output/upload_csv.html', {'form': form})
+        return render(request, 'db_output/upload_csv.html', {'form': form})
 
 
 def confirm_upload_details(request):
@@ -89,16 +80,18 @@ def confirm_upload_details(request):
     from .forms import ValidationForm
 
     player_list = request.session['player_list']
-
-    if not player_list:
+    if not player_list: # if we have looped over everyone
         results = []
         temp_dict = request.session['conversion_dict']
         for key in temp_dict.keys():
-            results.append((key, temp_dict['key']))
+            results.append((key, temp_dict[key]))
 
         return render(request, 'db_output/show_output.html', context={'results': results})
 
+    # TODO: we might be dropping the first player because pop on GET??
     csv_name = player_list.pop()  # calling pop directly on session doesn't work - this does
+    if csv_name == 'Anonymous':  # inserted by UA for "other team" stats
+        csv_name = player_list.pop()
     request.session['player_list'] = player_list
 
     match = None
@@ -106,8 +99,20 @@ def confirm_upload_details(request):
         if csv_name in stored_player.csv_names:
             match = str(stored_player)
 
-            # BLANK CSV_NAME PULLING UP FAKE HOMER SIMPSON STORED_PLAYER
-            # TODO: probably caused by "Anonymous" - need a blank player entry to take this regardless.
+    # these are to store data so that we can do the database operations in the next view (after confirm is pressed)
+    # saving pickled objects to session is EXTREMELY INSECURE if using untrusted session engine (like cookies)
+    # this code here won't change if the session engine ever changes
+    # unpickling can result in arbitrary code execution
+
+    if 'matched_to_update' in request.session:
+        matched_to_update = request.session['matched_to_update']
+    else:
+        matched_to_update = []
+
+    if 'nonmatched_to_create' in request.session:
+        nonmatched_to_create = request.session['nonmatched_to_create']
+    else:
+        nonmatched_to_create = []
 
     name_validation_form = ValidationForm(match=match)
 
@@ -118,23 +123,22 @@ def confirm_upload_details(request):
 
             # conversion dict will be { csv_name : actual_player_pk }
             new_dict = request.session['conversion_dict']
-            player_pks_to_save = []
 
             if results['selection'] == 'provided':
                 # find player object based on match, put in pk
                 new_dict[csv_name] = stored_player.player_ID
-                stored_player.csv_names.append(','+csv_name)
-                player_pks_to_save.append(stored_player.player_ID)
+                stored_player.csv_names = stored_player.csv_names + ',' + csv_name
+                matched_to_update.append(stored_player.player_ID)
 
             elif results['selection'] == 'custom':
-                # create new Player, input Proper name as given and csv_name as csv_name
                 given_name = results['custom_name']
-                new_player = Player(proper_name=given_name, csv_names=csv_name)
-                new_dict[csv_name] = new_player.player_ID
-                player_pks_to_save.append(new_player.player_ID)
+
+                nonmatched_to_create.append((given_name, csv_name))
 
             request.session['conversion_dict'] = new_dict
-            request.session['player_pks_to_save'] = player_pks_to_save
+            request.session['nonmatched_to_create'] = nonmatched_to_create
+            request.session['matched_to_update'] = matched_to_update
+
             return render(request, 'db_output/confirm_upload_details.html',
                           context={'form': name_validation_form, 'csv_name': csv_name, 'results': results})
     else:
@@ -146,13 +150,36 @@ def confirm_upload_details(request):
 def display_parse_results(request):
 
     from .ua_parser import parse
-    from .models import Player
+    from . import models
 
-    for player_pk in request.session['player_pks_to_save']:
-        p = Player.objects.get(pk=player_pk)
+    # we get to this view from confirm being pushed # TODO: make sure that's the only way
+
+    for player_pk in request.session['matched_to_update']:
+        p = models.Player.objects.get(pk=player_pk)
         p.save()
 
-    content = parse(request.session['filename'], request.session['conversion_dict'])
+    for given_name, csv_names in request.session['nonmatched_to_create']:
+        p = models.Player(proper_name=given_name, csv_names=csv_names)
+        p.save()
+
+    # creating the player objects can happen here, and therefore creating the team object is ok
+    # both should be persistent beyond the scope of a single csv, and thus parse call
+    # TODO: validate team names? fuck idk tho
+
+    fileobj = models.csvDocument.objects.get(pk=request.session['file_obj_pk'])
+    team_name = fileobj.your_team_name
+    for existing_team in models.Team.objects.all():
+        if existing_team.team_name == team_name:
+            team_obj_pk = existing_team.team_ID
+        else:
+            new_team = models.Team(team_name=team_name)
+            new_team.save()
+            team_obj_pk = new_team.team_ID
+
+
+    # TODO: ADD PLAYERS TO TEAM !!!
+
+    content = parse(request.session['file_obj_pk'], team_obj_pk, request.session['conversion_dict'])
     # currently this just gives us a success indicating string
 
-    return render(request, 'db_output/base.html', context={'content':content})
+    return render(request, 'db_output/base.html', context={'content': content})
