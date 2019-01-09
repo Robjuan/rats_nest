@@ -22,15 +22,15 @@ def test_output(request):
     # choices needs a list of 2-tuples, [value, humanreadable]
 
     for obj in csvDocument.objects.all():      # hope this isn't too resource-intensive
-        filelist.append((obj, str(obj)))
+        filelist.append((obj.id, str(obj)))
 
     if request.method == 'POST':
         form = fileSelector(request.POST, choices=filelist)
         if form.is_valid():
 
-            fileobj = form.cleaned_data['filechoice']
-            request.session['file_obj_pk'] = fileobj.id
-            request.session['player_list'] = get_player_names(fileobj.file)
+            fileobj_id = form.cleaned_data['filechoice']
+            request.session['file_obj_pk'] = fileobj_id
+            request.session['player_list'] = get_player_names(fileobj_id)
 
             return HttpResponseRedirect('confirm_upload_details')
     else:
@@ -89,6 +89,7 @@ def confirm_upload_details(request):
         return render(request, 'db_output/show_output.html', context={'results': results})
 
     # TODO: we might be dropping the first player because pop on GET??
+    # matched name is showing the next name in the list
     csv_name = player_list.pop()  # calling pop directly on session doesn't work - this does
     if csv_name == 'Anonymous':  # inserted by UA for "other team" stats
         csv_name = player_list.pop()
@@ -184,7 +185,7 @@ def display_parse_results(request):
         # establish m2m relationship
         this_team.Players.add(player.player_ID)
 
-    content = parse(request.session['file_obj_pk'], team_obj_pk, request.session['conversion_dict'])
+    results = parse(request.session['file_obj_pk'], team_obj_pk, request.session['conversion_dict'])
     # currently this just gives us a success indicating string
 
-    return render(request, 'db_output/base.html', context={'content': content})
+    return render(request, 'db_output/base.html', context={'results': results})

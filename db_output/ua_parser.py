@@ -9,7 +9,7 @@ def get_player_names(file_obj_pk):
     # shorter version that pulls out every player mentioned in the stats
     # used for manual data validation
 
-    filename = models.csvDocument.objects.get(pk=file_obj_pk).file
+    filename = str(models.csvDocument.objects.get(pk=file_obj_pk).file)
     csv_file = open(filename)
     csv_reader = csv.DictReader(csv_file, delimiter=',')
 
