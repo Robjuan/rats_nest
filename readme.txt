@@ -8,6 +8,8 @@ Eventually this will be:
 
 This is a web app done on Heroku, with Django as the framework.
 PostgreSQL is our database.
+PostgreSQL version must be 11.1+
+> 11.0 has bug that affect us
 
 Workflow:
 

@@ -40,11 +40,15 @@ def test_output(request):
 
 def insert_test_data(request):
 
-    from .models import Player
-    p = Player(proper_name='homer simpson', hometown='evergreen terrace')
+    from .models import Player, csvDocument
+    p = Player(proper_name='Anonymous', hometown='San Francisco, CA', csv_names='Anonymous')
     p.save()
 
-    # print(Players.objects.all())
+    for i in range(1,24):
+        csvDocument.objects.filter(id=i).delete()
+
+    print("list of players: ")
+    print(Player.objects.all())
 
     return HttpResponse('You have inserted '+str(p))
 
@@ -80,11 +84,15 @@ def confirm_upload_details(request):
     from .forms import ValidationForm
 
     player_list = request.session['player_list']
-    if not player_list: # if we have looped over everyone
+    if not player_list:  # if we have looped over everyone
         results = []
         temp_dict = request.session['conversion_dict']
         for key in temp_dict.keys():
             results.append((key, temp_dict[key]))
+
+        print(results)
+
+        # TODO: this needs to send us to display_parse_results
 
         return render(request, 'db_output/show_output.html', context={'results': results})
 
