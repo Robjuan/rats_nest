@@ -10,7 +10,7 @@ class csvDocument(models.Model):
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return 'csv from '+str(self.your_team_name)+', uploaded at: '+str(self.uploaded_at)[:10]
+        return 'csv from '+str(self.your_team_name)+', uploaded at: '+str(self.uploaded_at)[:19] # cut off secs
 
 # statistic storage
 

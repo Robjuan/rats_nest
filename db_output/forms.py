@@ -24,11 +24,10 @@ class fileSelector(forms.Form):
             self.initial = selected
 
 
-
 class ValidationForm(forms.Form):
 
     choices = (
-        ('provided', 'no match, custom will be used'),
+        ('provided', 'no match found, please provide custom name'),
         ('custom', 'custom')
     )
 
@@ -39,17 +38,23 @@ class ValidationForm(forms.Form):
 
     def __init__(self, data=None, *args, **kwargs):
         if 'match' in kwargs:
-            match = kwargs.pop('match')
+            self.match = kwargs.pop('match')
+            if self.match == 'None':
+                self.match = None  # TODO (lp): this feels not pythonic
         else:
-            match = None
+            self.match = None
 
         super(ValidationForm, self).__init__(data, *args, **kwargs)
 
-        if match:
-            self.fields['selection'].choices = (('provided', match), ('custom', 'custom'))
+        if self.match:
+            self.fields['selection'].choices = (('provided', self.match), ('custom', 'custom'))
 
         # charfield only NOT required if both a valid match avail, and that match is picked
         if data and data.get('selection', None) == 'custom':
             self.fields['custom_name'].required = True
-        if not match:
+        if not self.match:
             self.fields['custom_name'].required = True
+
+    def get_match(self):
+        # match isn't part of cleaned_data but we still want to know if one exists
+        return self.match

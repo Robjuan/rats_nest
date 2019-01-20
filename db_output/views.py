@@ -10,6 +10,14 @@ def index(request):
     return HttpResponse(render(request, 'db_output/index.html', {}))
 
 
+def not_blank_or_anoymous(name):
+    # 'Anonymous' is inserted by UA for "other team" stats, and Throwaways (as receiver)
+    if name and name != 'Anonymous':
+        return True
+    else:
+        return False
+
+
 def test_output(request):
 
     from .ua_parser import get_player_names
@@ -30,7 +38,9 @@ def test_output(request):
 
             fileobj_id = form.cleaned_data['filechoice']
             request.session['file_obj_pk'] = fileobj_id
-            request.session['player_list'] = get_player_names(fileobj_id)
+            player_list = [x for x in get_player_names(fileobj_id) if not_blank_or_anoymous(x)]
+            request.session['player_list'] = player_list
+                                            # TODO (lp) why are there blank names
 
             return HttpResponseRedirect('confirm_upload_details')
     else:
@@ -40,17 +50,31 @@ def test_output(request):
 
 def insert_test_data(request):
 
-    from .models import Player, csvDocument
-    p = Player(proper_name='Anonymous', hometown='San Francisco, CA', csv_names='Anonymous')
-    p.save()
+    # PLEASE BE VERY CAREFUL WITH MANUAL ADDITION AND SUBTRACTION
+    # Use the Admin portal for one offs
 
-    for i in range(1,24):
-        csvDocument.objects.filter(id=i).delete()
+    please_confirm_insert = False
+    please_confirm_delete = False
 
-    print("list of players: ")
-    print(Player.objects.all())
+    if please_confirm_insert:
+        from .models import Player, Team
+        p = Player(proper_name='Anonymous', hometown='San Francisco, CA', csv_names='Anonymous')
+        p.save()
 
-    return HttpResponse('You have inserted '+str(p))
+        t = Team(team_name='Default_team', origin='San Francisco, CA', division='Mixed')
+        t.save()
+        text = 'You have inserted:' +str(p)+' and '+str(t)
+
+    elif please_confirm_delete:
+        from .models import csvDocument
+        for i in range(1,5):
+            csvDocument.objects.filter(id=i).delete()
+        text = 'deleted'
+
+    else:
+        text = 'Nothing to see here'
+
+    return HttpResponse(text)
 
 
 def upload_csv(request):
@@ -79,81 +103,106 @@ def upload_csv(request):
         return render(request, 'db_output/upload_csv.html', {'form': form})
 
 
-def confirm_upload_details(request):
+def fetch_match(csv_name):
     from .models import Player
-    from .forms import ValidationForm
 
-    player_list = request.session['player_list']
-    if not player_list:  # if we have looped over everyone
-        results = []
-        temp_dict = request.session['conversion_dict']
-        for key in temp_dict.keys():
-            results.append((key, temp_dict[key]))
-
-        print(results)
-
-        # TODO: this needs to send us to display_parse_results
-
-        return render(request, 'db_output/show_output.html', context={'results': results})
-
-    # TODO: we might be dropping the first player because pop on GET??
-    # matched name is showing the next name in the list
-    csv_name = player_list.pop()  # calling pop directly on session doesn't work - this does
-    if csv_name == 'Anonymous':  # inserted by UA for "other team" stats
-        csv_name = player_list.pop()
-    request.session['player_list'] = player_list
-
-    match = None
     for stored_player in Player.objects.all():
         if csv_name in stored_player.csv_names:
-            match = str(stored_player)
+            return stored_player  # TODO (low priority): handle multiple matches
+        else:
+            return None
 
-    # these are to store data so that we can do the database operations in the next view (after confirm is pressed)
-    # saving pickled objects to session is EXTREMELY INSECURE if using untrusted session engine (like cookies)
-    # this code here won't change if the session engine ever changes
-    # unpickling can result in arbitrary code execution
 
-    if 'matched_to_update' in request.session:
-        matched_to_update = request.session['matched_to_update']
-    else:
-        matched_to_update = []
+def confirm_upload_details(request):
+    # from .models import Player
+    from .forms import ValidationForm
 
-    if 'nonmatched_to_create' in request.session:
-        nonmatched_to_create = request.session['nonmatched_to_create']
-    else:
-        nonmatched_to_create = []
+    # this view should have three branches
+    # 1 - GET
+    # 2 - POST w/ no names remaining
+    # 3 - POST w/ names remaining
 
-    name_validation_form = ValidationForm(match=match)
+    player_list = request.session['player_list']
 
+    # Branch 1:
+    if request.method == 'GET':
+        csv_name = player_list.pop()
+        request.session['player_list'] = player_list
+        request.session['prev_csv_name'] = csv_name
+
+        # these are to store data so that we can do the database operations in the next view (after confirm is pressed)
+        # saving pickled objects to session is EXTREMELY INSECURE if using untrusted session engine (like cookies)
+        # this code here won't change if the session engine ever changes
+        # unpickling can result in arbitrary code execution
+        request.session['matched_to_update'] = []
+        request.session['nonmatched_to_create'] = []
+
+        match = fetch_match(csv_name)
+        name_validation_form = ValidationForm(match=match)
+
+        request.session['conversion_dict'] = {}
+        return render(request, 'db_output/confirm_upload_details.html',
+                      context={'form': name_validation_form, 'csv_name': csv_name, 'results': str(player_list)})
+
+    # Branch 2 and 3:
     if request.method == 'POST':
-        name_validation_form = ValidationForm(request.POST, match=match)  # TODO: make the form empty on second visit
+
+        nonmatched_to_create = request.session['nonmatched_to_create']
+        matched_to_update = request.session['matched_to_update']
+
+        # Branch 2:
+        if not player_list:  # if we have looped over everyone
+            results = []
+            temp_dict = request.session['conversion_dict']
+            print('temp_dict == ' + str(temp_dict))  # this is blank
+            for k, v in temp_dict.items():
+                results.append((k, v))
+
+            # TODO (lp): best format for showing this to the user before confirmation?
+
+            return render(request, 'db_output/show_output.html', context={'results': results})
+
+        # Branch 3
+        name_validation_form = ValidationForm(request.POST)
         if name_validation_form.is_valid():
             results = name_validation_form.cleaned_data
+            csv_name = request.session['prev_csv_name']
+            match = fetch_match(csv_name)
 
             # conversion dict will be { csv_name : actual_player_pk }
             new_dict = request.session['conversion_dict']
 
-            if results['selection'] == 'provided':
+            # this means that if there is no match, regardless of form choice, the custom name provided will be used
+            # if there is no match, the form will require a custom name to be inputted
+            match_found = name_validation_form.get_match()
+            if results['selection'] == 'provided' and match_found:
                 # find player object based on match, put in pk
-                new_dict[csv_name] = stored_player.player_ID
-                stored_player.csv_names = stored_player.csv_names + ',' + csv_name
-                matched_to_update.append(stored_player.player_ID)
+                new_dict[csv_name] = match.player_ID
+                match.csv_names = match.csv_names + ',' + csv_name
+                matched_to_update.append(match.player_ID)
 
-            elif results['selection'] == 'custom':
+            else:
                 given_name = results['custom_name']
+                # when we create conversion dict from custom names we do not know their pks yet bc no object
+                # that is why conversion dict is empty on this page after a fully new team
+                # this will be written over with new pks in display_parse_results (after confirmation)
 
+                # new_dict[csv_name] = 'newly added player, ID to be created on confirmation'
+                new_dict[csv_name] = given_name
                 nonmatched_to_create.append((given_name, csv_name))
 
             request.session['conversion_dict'] = new_dict
             request.session['nonmatched_to_create'] = nonmatched_to_create
             request.session['matched_to_update'] = matched_to_update
 
+            csv_name = player_list.pop()
+            request.session['player_list'] = player_list
+            request.session['prev_csv_name'] = csv_name
+            match = fetch_match(csv_name)
+            name_validation_form = ValidationForm(match=match)
+
             return render(request, 'db_output/confirm_upload_details.html',
-                          context={'form': name_validation_form, 'csv_name': csv_name, 'results': results})
-    else:
-        request.session['conversion_dict'] = {}
-        return render(request, 'db_output/confirm_upload_details.html',
-                      context={'form': name_validation_form, 'csv_name': csv_name})
+                          context={'form': name_validation_form, 'csv_name': csv_name, 'results': str(request.session['conversion_dict'])})
 
 
 def display_parse_results(request):
@@ -162,6 +211,8 @@ def display_parse_results(request):
     from . import models
 
     # we get to this view from confirm being pushed # TODO: make sure that's the only way
+    # if not (where we came from) == (confirm_upload_details)
+    #   return home
 
     all_players = []
     for player_pk in request.session['matched_to_update']:
@@ -169,10 +220,13 @@ def display_parse_results(request):
         p.save()
         all_players.append(p)
 
-    for given_name, csv_names in request.session['nonmatched_to_create']:
-        p = models.Player(proper_name=given_name, csv_names=csv_names)
+    for given_name, csv_name in request.session['nonmatched_to_create']:
+        p = models.Player(proper_name=given_name, csv_names=csv_name)
         p.save()
         all_players.append(p)
+        temp_dict = request.session['conversion_dict']
+        temp_dict[csv_name] = p.player_ID
+        request.session['conversion_dict'] = temp_dict
 
     # creating the player objects can happen here, and therefore creating the team object is ok
     # both should be persistent beyond the scope of a single csv, and thus parse call
@@ -180,7 +234,7 @@ def display_parse_results(request):
 
     fileobj = models.csvDocument.objects.get(pk=request.session['file_obj_pk'])
     team_name = fileobj.your_team_name
-    for existing_team in models.Team.objects.all():
+    for existing_team in models.Team.objects.all():  # if nothing is in the db already this won't run anything
         if existing_team.team_name == team_name:
             team_obj_pk = existing_team.team_ID
         else:
@@ -192,8 +246,13 @@ def display_parse_results(request):
     for player in all_players:
         # establish m2m relationship
         this_team.Players.add(player.player_ID)
+    this_team.save()
 
     results = parse(request.session['file_obj_pk'], team_obj_pk, request.session['conversion_dict'])
     # currently this just gives us a success indicating string
 
     return render(request, 'db_output/base.html', context={'results': results})
+
+
+
+

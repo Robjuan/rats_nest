@@ -33,23 +33,23 @@ def get_player_names(file_obj_pk):
 # imo should check that right at the start and stop ?
 # how to identify?
 
-## One per game columns:
+# ** One per game columns:
 # Date/Time
 # Tournament
 # Opponent
 #
-## One per point columns:
+# ** One per point columns:
 # Line (refers to starting fence)
 # Our Score EOP
 # Their Score EOP
 # Point Elapsed Seconds
 #
-## One per possession columns:
+# ** One per possession columns:
 # Players # this is tracked per-point but we know it should be per (possession or event?)
 #         # we are storing this as per-event
 #
 #
-## One per event columns:
+# ** One per event columns:
 # Event Type
 # Action
 # Passer

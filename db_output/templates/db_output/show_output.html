@@ -4,31 +4,37 @@
 
 {% block content %}
 
-{% if form %}
+    {% if form %}
 
-  <h3> Please select a file to put through the parse data flow.</h3>
+      <h3> Please select a file to put through the parse data flow.</h3>
 
-  <form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Validate</button>
-  </form>
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Validate</button>
+      </form>
 
-{% endif %}
+    {% endif %}
 
 
-{% if results %}
+    {% if results %}
 
-    <h3> The below conversion dictionary was created based on your validation inputs.<br></h3>
-    <h4>Confirm will save your inputs and take you to the results of the parser.<br>
-    Cancel will return you to the file select page.</h4>
+        <h3> The below conversion dictionary was created based on your validation inputs.<br></h3>
+        <h4>Confirm will save your inputs and take you to the results of the parser.<br>
+        Cancel will return you to the file select page.</h4>
 
-    {{ results }}
+        {{ results }}
 
-    <p>
-    <a class="btn" href="{% url 'display_parse_results' %}">Confirm</a><br>
-    <a class="btn" href="{% url 'test_output' %}">Cancel</a>
+        <p>
+        <a class="btn" href="{% url 'display_parse_results' %}">Confirm</a><br>
+        <a class="btn" href="{% url 'test_output' %}">Cancel</a>
 
-{% endif %}
+    {% endif %}
+
+    {% if parsed_results %}
+
+        {{ parsed_results }}
+
+    {% endif %}
 
 {% endblock %}
