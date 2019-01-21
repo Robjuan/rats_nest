@@ -94,7 +94,7 @@ def parse(file_obj_pk, team_obj_pk, conversion_dict):
             this_game.datetime = line['Date/Time']
             this_game.tournament_name = line['Tournamemnt']  # UA csv has typo in column name "Tournamemnt"
             this_game.file_model = models.csvDocument.objects.get(pk=file_obj_pk)
-            this_game.team_ID = models.Team.objects.get(pk=team_obj_pk)
+            this_game.team = models.Team.objects.get(pk=team_obj_pk)
 
             this_game.save()
 
@@ -151,7 +151,7 @@ def parse(file_obj_pk, team_obj_pk, conversion_dict):
             col = 'Player '+str(x)
             player_col_list.append(col)
 
-        this_event = handle_new_event(this_possession.possession_ID,line)
+        this_event = handle_new_event(this_possession.possession_ID, line)
 
         for player_col in player_col_list:
             if line[player_col]:
@@ -175,7 +175,7 @@ def parse(file_obj_pk, team_obj_pk, conversion_dict):
         if line['Action'] == 'Pull' or line['Action'] == 'PullOB':
             # if we start on defence - first event will be a pull
             this_pull = handle_new_pull(line['Hang Time (secs)'])
-            this_point.pull_ID = this_pull
+            this_point.pull = this_pull
 
         # elif line['Action'] == 'D':
 
@@ -194,10 +194,11 @@ def parse(file_obj_pk, team_obj_pk, conversion_dict):
 # handle_x functions always return the object they created/found
 
 
-def handle_new_event(possession_ID,line):
+def handle_new_event(possession_ID, line):
     this_event = models.Event()
     this_event.action = line['Action']
     this_event.elapsedtime = line['Elapsed Time (secs)']
+    this_event.possession = models.Possession.objects.get(pk=possession_ID)
 
     this_event.save()
     return this_event

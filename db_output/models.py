@@ -53,7 +53,7 @@ class Team(models.Model):
 
 class Game(models.Model):
     game_ID = models.AutoField(primary_key=True)
-    team_ID = models.ForeignKey(Team,
+    team = models.ForeignKey(Team,
                                 on_delete=models.PROTECT)
     # need to handle a way to save the opposing team name without creating too much junk
     # if we only know the name
@@ -63,12 +63,12 @@ class Game(models.Model):
                                          on_delete=models.SET_NULL,
                                          blank=True,
                                          null=True,
-                                         related_name='opposition_id')
+                                         related_name='opposition')
     opposing_game = models.ForeignKey('self',
                                          on_delete=models.SET_NULL,
                                          blank=True,
                                          null=True,
-                                         related_name='opposition_game_id')
+                                         related_name='opposition_game')
 
     file_model = models.ForeignKey(csvDocument,
                                    on_delete=models.PROTECT)
@@ -99,7 +99,7 @@ class Pull(models.Model):
                                    max_digits=4)
 
     def __str__(self):
-        return 'Pull - [id:' + str(self.pull_ID) + '] player_id:' + str(self.player_ID)
+        return 'Pull - [id:' + str(self.pull_ID) + '] player:' + str(self.player)
 
 
 class Point(models.Model):
@@ -121,7 +121,7 @@ class Point(models.Model):
     halfatend = models.BooleanField(default=False)
 
     def __str__(self):
-        return 'Point - [id:'+str(self.point_ID)+'] game:'+str(self.game_ID) +\
+        return 'Point - [id:'+str(self.point_ID)+'] game:'+str(self.game) +\
                ',[us|them]: ['+str(self.ourscore_EOP)+'|'+str(self.theirscore_EOP)+']'
 
 
