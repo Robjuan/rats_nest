@@ -9,6 +9,8 @@ class csvDocument(models.Model):
     file = models.FileField(upload_to='csv/')
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
+    # TODO: implement some kind of "parsed" key
+
     def __str__(self):
         return 'csv from '+str(self.your_team_name)+', uploaded at: '+str(self.uploaded_at)[:19]  # cut off secs
 
@@ -144,14 +146,17 @@ class Event(models.Model):
     passer = models.ForeignKey(Player,
                                on_delete=models.PROTECT,
                                blank=True,
+                               null=True,
                                related_name='passer')
     receiver = models.ForeignKey(Player,
                                  on_delete=models.PROTECT,
                                  blank=True,
+                                 null=True,
                                  related_name='receiver')
     defender = models.ForeignKey(Player,
                                  on_delete=models.PROTECT,
                                  blank=True,
+                                 null=True,
                                  related_name='defender')
     # don't allow deletion of players if they have events attached to them
     event_type = models.CharField(max_length=30)

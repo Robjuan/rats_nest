@@ -26,6 +26,8 @@ def test_output(request):
 
     filelist = []
 
+    # TODO (lp): streamline data input?
+
     # apparently dyanmic choices should be done via foreignkey?
     # choices needs a list of 2-tuples, [value, humanreadable]
 
@@ -80,23 +82,17 @@ def insert_test_data(request):
 def upload_csv(request):
     from .forms import csvDocumentForm
 
+    # TODO (feat): take in more information about the game (location, conditions etc)
+    # use tags for conditions
+
     # this permission check might be duplicative as it is also checked in the template
     # TODO: this permission doesn't actually exist, but rob_development is a superuser so has_perm always returns True
 
     if request.method == 'POST' and request.user.has_perm('db_output.can_upload_csv'):
         form = csvDocumentForm(request.POST, request.FILES)
         if form.is_valid():
-
-            # METHOD 1 : save to "default storage" as a simple file
-            # file = request.FILES['file']
-            # file_name = default_storage.save(file.name, file)
-
-            # METHOD 2 : save to the database as part of a model
             form.save()
-            # we need to save who took the stats to be able to restrict access
-            # saving as a model allows this sort of shit
-            # we can work on offsite storage of the csv later
-
+            # TODO: check we're not saving/parsing the same game (datetime, tournament name)
             return HttpResponseRedirect('test_output')  # show if something got added
     else:
         form = csvDocumentForm()
@@ -111,13 +107,16 @@ def fetch_match(csv_name):
     for stored_player in Player.objects.all():
         if csv_name in stored_player.csv_names or csv_name == stored_player.proper_name:
             return stored_player  # TODO (lp): handle multiple matches
-        else:
-            return None
+
+    # only if no match found
+    return None
 
 
 def confirm_upload_details(request):
     # from .models import Player
     from .forms import ValidationForm
+
+    # TODO: take in more information about the player, compare on more than name
 
     # this view should have three branches
     # 1 - GET
@@ -154,17 +153,6 @@ def confirm_upload_details(request):
         csv_name = request.session['prev_csv_name']
         match = fetch_match(csv_name)
 
-        # Branch 2:
-        if not player_list:  # if we have looped over everyone
-            results = []
-            temp_dict = request.session['conversion_dict']
-            for k, v in temp_dict.items():
-                results.append((k, v))
-
-            # TODO (lp): best format for showing this to the user before confirmation?
-
-            return render(request, 'db_output/show_output.html', context={'results': results})
-
         # Branch 3
         name_validation_form = ValidationForm(request.POST, match=match)
         # not supplying match here makes the form set a custom name to required, and then the next line returns False
@@ -196,6 +184,17 @@ def confirm_upload_details(request):
             request.session['nonmatched_to_create'] = nonmatched_to_create
             request.session['matched_to_update'] = matched_to_update
 
+            # Branch 2:
+            if not player_list:  # if we have looped over everyone
+                results = []
+                temp_dict = request.session['conversion_dict']
+                for k, v in temp_dict.items():
+                    results.append((k, v))
+
+                # TODO (lp): best format for showing this to the user before confirmation?
+
+                return render(request, 'db_output/show_output.html', context={'results': results})
+
             csv_name = player_list.pop()
             request.session['player_list'] = player_list
             request.session['prev_csv_name'] = csv_name
@@ -206,10 +205,11 @@ def confirm_upload_details(request):
                           context={'form': name_validation_form, 'csv_name': csv_name, 'results': str(request.session['conversion_dict'])})
 
         else:
-            # why is data coming through as not valid ??
+            # reload the page with everything as it was
             name_validation_form = ValidationForm(match=match)
             return render(request, 'db_output/confirm_upload_details.html',
-                          context={'form': name_validation_form, 'csv_name': csv_name, 'results': 'data was not valid'})
+                          context={'form': name_validation_form, 'csv_name': csv_name,
+                                   'results': 'Data entered was not valid, please retry'})
 
 
 def display_parse_results(request):
@@ -256,10 +256,10 @@ def display_parse_results(request):
         this_team.players.add(player.player_ID)
     this_team.save()
 
-    results = parse(request.session['file_obj_pk'], team_obj_pk, request.session['conversion_dict'])
+    parsed_results = parse(request.session['file_obj_pk'], team_obj_pk, request.session['conversion_dict'])
     # currently this just gives us a success indicating string
 
-    return render(request, 'db_output/base.html', context={'results': results})
+    return render(request, 'db_output/show_output.html', context={'parsed_results': parsed_results})
 
 
 

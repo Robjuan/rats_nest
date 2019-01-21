@@ -59,29 +59,25 @@ def get_player_names(file_obj_pk):
 
 
 def parse(file_obj_pk, team_obj_pk, conversion_dict):
-    # should also be taking in any data that is required that cannot be pulled from the file
-    # team_name
-    # conversion_dict (see bottom)
-    # optional: opposing game/team
 
     filename = models.csvDocument.objects.get(pk=file_obj_pk).file.name
     csv_file = open(filename)
     csv_reader = csv.DictReader(csv_file, delimiter=',')
     # DictReader means that each line is a dictionary, with name:value determined by column name:column value
 
-    # valid column names from ua csv are:
+    conversion_dict['Anonymous'] = -1
+    # handle_check_player will then return None
 
+    # *** valid column names from ua csv are:
     # Date/Time,Tournamemnt,Opponent,Point Elapsed Seconds,Line,Our Score - End of Point,Their Score - End of Point,
     # Event Type,Action,Passer,Receiver,Defender,Hang Time (secs),Elapsed Time (secs),
-
     # Player 0,Player 1,Player 2,Player 3,Player 4,Player 5,Player 6,Player 7,Player 8,Player 9,Player 10,Player 11,
     # Player 12,Player 13,Player 14,Player 15,Player 16,Player 17,Player 18,Player 19,Player 20,Player 21,Player 22,
     # Player 23,Player 24,Player 25,Player 26,Player 27,
-
-    # # below are unused
+    # *** below are unused
     # Begin Area,Begin X,Begin Y,End Area,End X,End Y,Distance Unit of Measure,Absolute Distance,Lateral Distance,Toward Our Goal Distance
 
-    indexed_lines = list(enumerate(csv_reader)) # i wonder if this is memory inefficient?
+    indexed_lines = list(enumerate(csv_reader))  # i wonder if this is memory inefficient?
     # indexed_lines[index] returns (index,line) tuple
 
     for index, line in indexed_lines:
@@ -98,6 +94,7 @@ def parse(file_obj_pk, team_obj_pk, conversion_dict):
 
             this_game.save()
 
+            # TODO (feat): combine two sets of UA stats into one game
             # how to set opposing game deatils and stuff
             # manually subsequently?
             # line['Opponent']
@@ -174,7 +171,7 @@ def parse(file_obj_pk, team_obj_pk, conversion_dict):
 
         if line['Action'] == 'Pull' or line['Action'] == 'PullOB':
             # if we start on defence - first event will be a pull
-            this_pull = handle_new_pull(line['Hang Time (secs)'])
+            this_pull = handle_new_pull(conversion_dict[line['Defender']], line['Hang Time (secs)'])
             this_point.pull = this_pull
 
         # elif line['Action'] == 'D':
@@ -193,7 +190,6 @@ def parse(file_obj_pk, team_obj_pk, conversion_dict):
 
 # handle_x functions always return the object they created/found
 
-
 def handle_new_event(possession_ID, line):
     this_event = models.Event()
     this_event.action = line['Action']
@@ -204,8 +200,9 @@ def handle_new_event(possession_ID, line):
     return this_event
 
 
-def handle_new_pull(hangtime=None):
+def handle_new_pull(player_ID, hangtime=None):
     this_pull = models.Pull()
+    this_pull.player = models.Player.objects.get(pk=player_ID)
     if hangtime:
         this_pull.hangtime = hangtime
 
@@ -215,7 +212,7 @@ def handle_new_pull(hangtime=None):
 
 def handle_new_point(game_ID, line, halfatend=False):
     this_point = models.Point()
-    this_point.game_ID = models.Game.objects.get(pk=game_ID)
+    this_point.game = models.Game.objects.get(pk=game_ID)
     this_point.point_elapsed_seconds = line['Point Elapsed Seconds']
     this_point.startingfence = line['Line']
     this_point.ourscore_EOP = line['Our Score - End of Point']
@@ -229,7 +226,7 @@ def handle_new_point(game_ID, line, halfatend=False):
 
 def handle_new_possession(point_ID):
     this_possession = models.Possession()
-    this_possession.point_ID = models.Point.objects.get(pk=point_ID)
+    this_possession.point = models.Point.objects.get(pk=point_ID)
 
     this_possession.save()
     return this_possession
@@ -237,6 +234,9 @@ def handle_new_possession(point_ID):
 
 def handle_check_player(player_pk):
     # check if a Player object for this player exists
-    # TODO: this doesn't do any checking
-    return models.Player.objects.get(pk=player_pk)
+    # return None if the "pk" for Anonymous is passed
+    if player_pk == -1:  # Anonymous
+        return None
+    else:
+        return models.Player.objects.get(pk=player_pk)
 
