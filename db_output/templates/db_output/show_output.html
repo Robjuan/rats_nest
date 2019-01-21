@@ -4,7 +4,7 @@
 
 {% block content %}
 
-    {% if form %}
+    {% if form %} <!-- test_output sends 'form' -->
 
       <h3> Please select a file to put through the parse data flow.</h3>
 
@@ -17,7 +17,7 @@
     {% endif %}
 
 
-    {% if results %}
+    {% if results %} <!-- branch 3 of confirm_upload_details sends 'results' -->
 
         <h3> The below conversion dictionary was created based on your validation inputs.<br></h3>
         <h4>Confirm will save your inputs and take you to the results of the parser.<br>
@@ -31,10 +31,19 @@
 
     {% endif %}
 
+
+    {% if teamvalidation %} <!-- [x] sends 'teamvalidation' -->
+
+        {{ teamvalidation }}
+
+    {% endif %}
+
+
     {% if parsed_results %}
 
         {{ parsed_results }}
 
     {% endif %}
+
 
 {% endblock %}

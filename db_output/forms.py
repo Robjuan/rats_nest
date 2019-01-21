@@ -57,4 +57,5 @@ class ValidationForm(forms.Form):
 
     def get_match(self):
         # match isn't part of cleaned_data but we still want to know if one exists
+        # 20/1/18 is this being used anywhere?
         return self.match

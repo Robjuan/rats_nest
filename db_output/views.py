@@ -29,7 +29,7 @@ def test_output(request):
     # apparently dyanmic choices should be done via foreignkey?
     # choices needs a list of 2-tuples, [value, humanreadable]
 
-    for obj in csvDocument.objects.all():      # hope this isn't too resource-intensive
+    for obj in csvDocument.objects.all():      # TODO (db): redo with better query
         filelist.append((obj.id, str(obj)))
 
     if request.method == 'POST':
@@ -106,9 +106,11 @@ def upload_csv(request):
 def fetch_match(csv_name):
     from .models import Player
 
+    # TODO (db): redo this with a more efficient query
+
     for stored_player in Player.objects.all():
-        if csv_name in stored_player.csv_names:
-            return stored_player  # TODO (low priority): handle multiple matches
+        if csv_name in stored_player.csv_names or csv_name == stored_player.proper_name:
+            return stored_player  # TODO (lp): handle multiple matches
         else:
             return None
 
@@ -149,12 +151,13 @@ def confirm_upload_details(request):
 
         nonmatched_to_create = request.session['nonmatched_to_create']
         matched_to_update = request.session['matched_to_update']
+        csv_name = request.session['prev_csv_name']
+        match = fetch_match(csv_name)
 
         # Branch 2:
         if not player_list:  # if we have looped over everyone
             results = []
             temp_dict = request.session['conversion_dict']
-            print('temp_dict == ' + str(temp_dict))  # this is blank
             for k, v in temp_dict.items():
                 results.append((k, v))
 
@@ -163,19 +166,17 @@ def confirm_upload_details(request):
             return render(request, 'db_output/show_output.html', context={'results': results})
 
         # Branch 3
-        name_validation_form = ValidationForm(request.POST)
+        name_validation_form = ValidationForm(request.POST, match=match)
+        # not supplying match here makes the form set a custom name to required, and then the next line returns False
         if name_validation_form.is_valid():
             results = name_validation_form.cleaned_data
-            csv_name = request.session['prev_csv_name']
-            match = fetch_match(csv_name)
 
             # conversion dict will be { csv_name : actual_player_pk }
             new_dict = request.session['conversion_dict']
 
             # this means that if there is no match, regardless of form choice, the custom name provided will be used
             # if there is no match, the form will require a custom name to be inputted
-            match_found = name_validation_form.get_match()
-            if results['selection'] == 'provided' and match_found:
+            if results['selection'] == 'provided' and match:
                 # find player object based on match, put in pk
                 new_dict[csv_name] = match.player_ID
                 match.csv_names = match.csv_names + ',' + csv_name
@@ -204,6 +205,12 @@ def confirm_upload_details(request):
             return render(request, 'db_output/confirm_upload_details.html',
                           context={'form': name_validation_form, 'csv_name': csv_name, 'results': str(request.session['conversion_dict'])})
 
+        else:
+            # why is data coming through as not valid ??
+            name_validation_form = ValidationForm(match=match)
+            return render(request, 'db_output/confirm_upload_details.html',
+                          context={'form': name_validation_form, 'csv_name': csv_name, 'results': 'data was not valid'})
+
 
 def display_parse_results(request):
 
@@ -230,22 +237,23 @@ def display_parse_results(request):
 
     # creating the player objects can happen here, and therefore creating the team object is ok
     # both should be persistent beyond the scope of a single csv, and thus parse call
-    # TODO: validate team names? fuck idk tho
+
+    # TODO: manually validate team names like player names
 
     fileobj = models.csvDocument.objects.get(pk=request.session['file_obj_pk'])
     team_name = fileobj.your_team_name
-    for existing_team in models.Team.objects.all():  # if nothing is in the db already this won't run anything
-        if existing_team.team_name == team_name:
-            team_obj_pk = existing_team.team_ID
-        else:
-            new_team = models.Team(team_name=team_name)
-            new_team.save()
-            team_obj_pk = new_team.team_ID
+
+    if models.Team.objects.filter(team_name=team_name).exists():
+        team_obj_pk = models.Team.objects.get(team_name=team_name).team_ID  # TODO: handle multiple team matches
+    else:
+        new_team = models.Team(team_name=team_name)
+        new_team.save()
+        team_obj_pk = new_team.team_ID
 
     this_team = models.Team.objects.get(pk=team_obj_pk)
     for player in all_players:
         # establish m2m relationship
-        this_team.Players.add(player.player_ID)
+        this_team.players.add(player.player_ID)
     this_team.save()
 
     results = parse(request.session['file_obj_pk'], team_obj_pk, request.session['conversion_dict'])

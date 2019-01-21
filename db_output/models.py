@@ -10,7 +10,7 @@ class csvDocument(models.Model):
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return 'csv from '+str(self.your_team_name)+', uploaded at: '+str(self.uploaded_at)[:19] # cut off secs
+        return 'csv from '+str(self.your_team_name)+', uploaded at: '+str(self.uploaded_at)[:19]  # cut off secs
 
 # statistic storage
 
@@ -59,12 +59,12 @@ class Game(models.Model):
     # if we only know the name
 
     # SET_NULL means that if you delete the referenced team, this just goes to null
-    opposing_team_ID = models.ForeignKey(Team,
+    opposing_team = models.ForeignKey(Team,
                                          on_delete=models.SET_NULL,
                                          blank=True,
                                          null=True,
                                          related_name='opposition_id')
-    opposing_game_ID = models.ForeignKey('self',
+    opposing_game = models.ForeignKey('self',
                                          on_delete=models.SET_NULL,
                                          blank=True,
                                          null=True,
@@ -90,7 +90,7 @@ class Game(models.Model):
 class Pull(models.Model):
     pull_ID = models.AutoField(primary_key=True)
     # PROTECT will error if the player is deleted when pulls exist
-    player_ID = models.ForeignKey(Player,
+    player = models.ForeignKey(Player,
                                   on_delete=models.PROTECT)
 
     # non-key
@@ -105,10 +105,10 @@ class Pull(models.Model):
 class Point(models.Model):
     point_ID = models.AutoField(primary_key=True)
     # CASCADE means that if the game is deleted, all the relevant points will be deleted too
-    game_ID = models.ForeignKey(Game,
+    game = models.ForeignKey(Game,
                                 models.CASCADE)
     # SET NULL means that if the pull is deleted, this just goes to null
-    pull_ID = models.ForeignKey(Pull,
+    pull = models.ForeignKey(Pull,
                                 on_delete=models.SET_NULL,
                                 blank=True,
                                 null=True)
@@ -127,8 +127,7 @@ class Point(models.Model):
 
 class Possession(models.Model):
     possession_ID = models.AutoField(primary_key=True)
-    point_ID = models.ForeignKey(Point,
-                                 on_delete=models.CASCADE)
+    point = models.ForeignKey(Point, on_delete=models.CASCADE)
     # if the point is deleted, delete relevant possessions
 
     def __str__(self):
@@ -137,7 +136,7 @@ class Possession(models.Model):
 
 class Event(models.Model):
     event_ID = models.AutoField(primary_key=True)
-    possession_ID = models.ForeignKey(Possession,
+    possession = models.ForeignKey(Possession,
                                       on_delete=models.CASCADE)
     players = models.ManyToManyField(Player,
                                      related_name='players_onfield')
@@ -155,9 +154,6 @@ class Event(models.Model):
                                  blank=True,
                                  related_name='defender')
     # don't allow deletion of players if they have events attached to them
-    # depending on the event_type, either:
-    # defender ONLY will be blank, or passer&recevier will BOTH be blank
-
     event_type = models.CharField(max_length=30)
     elapsedtime = models.IntegerField()
 

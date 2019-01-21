@@ -64,7 +64,7 @@ def parse(file_obj_pk, team_obj_pk, conversion_dict):
     # conversion_dict (see bottom)
     # optional: opposing game/team
 
-    filename = models.csvDocument.objects.get(pk=file_obj_pk).file
+    filename = models.csvDocument.objects.get(pk=file_obj_pk).file.name
     csv_file = open(filename)
     csv_reader = csv.DictReader(csv_file, delimiter=',')
     # DictReader means that each line is a dictionary, with name:value determined by column name:column value
@@ -93,8 +93,8 @@ def parse(file_obj_pk, team_obj_pk, conversion_dict):
             this_game = models.Game()
             this_game.datetime = line['Date/Time']
             this_game.tournament_name = line['Tournamemnt']  # UA csv has typo in column name "Tournamemnt"
-            this_game.file_model = file_obj_pk
-            this_game.team_ID = team_obj_pk
+            this_game.file_model = models.csvDocument.objects.get(pk=file_obj_pk)
+            this_game.team_ID = models.Team.objects.get(pk=team_obj_pk)
 
             this_game.save()
 
@@ -175,7 +175,7 @@ def parse(file_obj_pk, team_obj_pk, conversion_dict):
         if line['Action'] == 'Pull' or line['Action'] == 'PullOB':
             # if we start on defence - first event will be a pull
             this_pull = handle_new_pull(line['Hang Time (secs)'])
-            this_point.pull_ID = this_pull.pull_ID
+            this_point.pull_ID = this_pull
 
         # elif line['Action'] == 'D':
 
@@ -213,11 +213,8 @@ def handle_new_pull(hangtime=None):
 
 
 def handle_new_point(game_ID, line, halfatend=False):
-    print('entering HNP')
-    #print('line ='+str(line))
-    print('gameid = '+str(game_ID))
     this_point = models.Point()
-    this_point.game_ID = game_ID
+    this_point.game_ID = models.Game.objects.get(pk=game_ID)
     this_point.point_elapsed_seconds = line['Point Elapsed Seconds']
     this_point.startingfence = line['Line']
     this_point.ourscore_EOP = line['Our Score - End of Point']
@@ -231,7 +228,7 @@ def handle_new_point(game_ID, line, halfatend=False):
 
 def handle_new_possession(point_ID):
     this_possession = models.Possession()
-    this_possession.point_ID = point_ID
+    this_possession.point_ID = models.Point.objects.get(pk=point_ID)
 
     this_possession.save()
     return this_possession
