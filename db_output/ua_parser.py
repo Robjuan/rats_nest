@@ -171,8 +171,7 @@ def parse(file_obj_pk, team_obj_pk, conversion_dict):
 
         if line['Action'] == 'Pull' or line['Action'] == 'PullOB':
             # if we start on defence - first event will be a pull
-            this_pull = handle_new_pull(conversion_dict[line['Defender']], line['Hang Time (secs)'])
-            this_point.pull = this_pull
+            this_pull = handle_new_pull(conversion_dict[line['Defender']], this_point.point_ID, line['Hang Time (secs)'])
 
         # elif line['Action'] == 'D':
 
@@ -200,9 +199,10 @@ def handle_new_event(possession_ID, line):
     return this_event
 
 
-def handle_new_pull(player_ID, hangtime=None):
+def handle_new_pull(player_ID, point_ID, hangtime=None):
     this_pull = models.Pull()
     this_pull.player = models.Player.objects.get(pk=player_ID)
+    this_pull.point = models.Point.objects.get(pk=point_ID)
     if hangtime:
         this_pull.hangtime = hangtime
 
@@ -219,7 +219,6 @@ def handle_new_point(game_ID, line, halfatend=False):
     this_point.theirscore_EOP = line['Their Score - End of Point']
     this_point.halfatend = halfatend
 
-    # pull will be set when we get to that event in block 2
     this_point.save()
     return this_point
 
