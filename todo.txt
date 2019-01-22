@@ -6,21 +6,21 @@ Almost certainly exists potential for breakage if we access pages/
 in the wrong order. Can I control access to make sure the linear flow I'm/
 designing is the only possible route through the relevant pages?
 
-
+** ENFORCE EXPECTED FLOW
 
 parse() crashes if accessed before uploading new csv - only remotely ???
 
 ** Objective:
 MINIMUM VIABLE PRODUCT:
 1. Build .csv upload capability ** DONE
-2. Build .csv -> db parser
+2. Build .csv -> db parser ** DONE
 3. Build db output capability ** DONE
 
-Parser to be built.
+** STRESS TEST PARSER **
 
 REMOTE ONLY ISSUES (usually storage/db related)
 after uploading a new csv, fetching works
 before that, no fetch works??
-
+-- something to do with db sleeping?
 
 

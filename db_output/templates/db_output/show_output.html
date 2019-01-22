@@ -6,16 +6,24 @@
 
     {% if form %} <!-- test_output sends 'form' -->
 
-      <h3> Please select a file to put through the parse data flow.</h3>
+        {% if perms.db_output.can_request_parse %} <!-- TODO: a fake permission, superusers only atm  -->
 
-      <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Validate</button>
-      </form>
+          <h3> Please select a file to put through the parse data flow.</h3>
+
+          <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit">Validate</button>
+          </form>
+
+        {% else %}
+
+            <h3>You do not have permission to parse uploaded csv files</h3>
+            <p><a href="{% url 'login' %}">Login here</a></p>
+
+        {% endif %}
 
     {% endif %}
-
 
     {% if results %} <!-- branch 3 of confirm_upload_details sends 'results' -->
 

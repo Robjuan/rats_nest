@@ -1,23 +1,14 @@
 Eventual Goals:
 
-Upload csv to system to be handled, then ship it off to archive.
+Features:
+- user registration system
+- player validation will multiple options
+- team validation
 
-Authenticate users to have them see all their stats. 
-Teams need to be able to control access to their stats.
-Probably best to control this on a per-game basis
--- thus the person who takes the stats can control who reads it (public/private boolean)
--- this means we need to store the uploader when they do it
--- storing csv as model allows this and more, all good. 
--- however it means the csv is stored inside the database. 
----- is there a way to ship the actual storage offsite and store a pointer?
+- control over who can view stats - flag on game, cascade all the way down to events
 
-Users creating their own usernames - can then only upload new csvs, no modification of uploaded stats
-https://wsvincent.com/django-user-authentication-tutorial-signup/
+- style.css
 
-A nice site?, style.css
-	
-should we define stuff like page titles in their templates?
-> if it's a single use template, sure. if planning to reuse, no.
+Structure:
+- use a lot of premade apps/functions
 
-validate team names more meaningfully than checking ==
-provide places for users to input all the additional data

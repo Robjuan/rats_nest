@@ -15,6 +15,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from db_output import views as v
 
 
 # # rs @ 27/11
@@ -26,7 +27,8 @@ from django.urls import path, include
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('db_output/', include('db_output.urls')),
-    path('accounts/', include('django.contrib.auth.urls'))
+    path('accounts/', include('django.contrib.auth.urls')),
+    path('', v.index, name='index')
 ]
 
 # URLs provided by auth are:

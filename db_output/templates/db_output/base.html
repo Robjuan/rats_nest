@@ -27,7 +27,7 @@
         <ul>
             <li><a href="/admin">Access the admin portal</a></li> <!-- django backend is hardcoded -->
             <li><a href="{% url 'index' %}">Go to the index of db_output</a></li>
-            <li><a href="{% url 'test_output' %}">Check the output</a></li>
+            <li><a href="{% url 'test_output' %}">Parse an uploaded csv (requires login)</a></li>
             <li><a href="{% url 'upload_csv' %}">Upload a new UA csv (requires login)</a></li>
             <li><a href="{% url 'logout' %}">Logout</a></li>
         </ul>
