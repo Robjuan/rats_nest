@@ -13,6 +13,7 @@ urlpatterns = [
     path('upload_csv', views.upload_csv, name='upload_csv'),
     path('test_output', views.test_output, name='test_output'),
     path('insert_test_data', views.insert_test_data, name='insert_test_data'),
+    path('contact_us', views.contact_us, name='contact_us'),
     path('', views.index, name='index')
     # empty route catches every leftover request ?
 ]

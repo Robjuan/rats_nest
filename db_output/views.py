@@ -6,8 +6,11 @@ from django.core.files.storage import default_storage
 
 
 def index(request):
-
     return HttpResponse(render(request, 'db_output/index.html', {}))
+
+
+def contact_us(request):
+    return HttpResponse(render(request, 'db_output/contact_us.html', {}))
 
 
 def not_blank_or_anoymous(name):

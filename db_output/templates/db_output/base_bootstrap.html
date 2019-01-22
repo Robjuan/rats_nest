@@ -2,6 +2,8 @@
 {% load static %}
 <html lang="en">
 
+<!-- full credit for this theme goes to https://startbootstrap.com/template-overviews/simple-sidebar/ -->
+
 
 <head>
 
@@ -30,17 +32,18 @@
             <!-- Sidebar -->
             <div id="sidebar-wrapper">
                 <ul class="sidebar-nav">
-                    <li class="sidebar-brand">RATS_NEST</li>
+                    <li class="sidebar-brand">RATS NEST</li>
                     <li><a href="{% url 'index' %}">Home</a></li>
                     <li><a href="{% url 'test_output' %}">Parse an uploaded csv</a></li>
                     <li><a href="{% url 'upload_csv' %}">Upload a new UA csv</a></li>
                     <li><a href="/admin">Access the admin portal</a></li> <!-- django backend is hardcoded -->
+                    <li><a href="{% url 'contact_us' %}">Contact Us</a></li>
+                    <li></li>
 
                 {% if user.is_authenticated %}
                     <li>You are logged in as: </li>
                     <li>{{ user.username }}</li>
                     <li><a href="{% url 'logout' %}">Logout</a></li>
-
                 {% else %}
                     <li>You are not logged in - <a href="{% url 'login' %}">Login</a></li>
                 {% endif %}
