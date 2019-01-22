@@ -14,6 +14,6 @@ DATABASES = {
      }
 }
 
-DATABASES['default'].update(dj_database_url.config()) # now working on remote heroku !!!
+DATABASES['default'].update(dj_database_url.config())  # now working on remote heroku !!!
 
 print('heroku_production settings loaded')

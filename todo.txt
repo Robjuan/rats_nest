@@ -1,3 +1,8 @@
+VERIFY HEROKU ACCOUNT
+GET PAPERTRAIL GOING
+WORK OUT WHY IT ISN'T RUNNING REMOTELY
+
+
 Overarching design concerns/thoughts:
 # is it too linear? 
 I am building a flow of screens to take the csv, add data as required,/
