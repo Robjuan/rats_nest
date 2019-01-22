@@ -116,6 +116,8 @@ def confirm_upload_details(request):
     # from .models import Player
     from .forms import ValidationForm
 
+    # FIXME: if you refresh you redo the GET part with no processing
+
     # TODO: take in more information about the player, compare on more than name
 
     # this view should have three branches

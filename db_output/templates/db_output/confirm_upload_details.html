@@ -1,15 +1,14 @@
-{% extends 'db_output/base.html' %}
+{% extends 'db_output/base_bootstrap.html' %}
 
 {% block title %} Confirm Upload Details {% endblock %}
 
 {% block content %}
-<h2></h2>
 
 <!-- form up top to select which game you'd like to check parse of -->
 
-<h3> For each player mentioned in your UltiAnalytics csv,
+<h4> For each player mentioned in your UltiAnalytics csv,
   we have attempted to match them with an existing player in our database<br>
-  Please select the appropriate player, or create a new player by inputting a new PROPER NAME<br></h3>
+  Please select the appropriate player, or create a new player by inputting a new PROPER NAME<br></h4><p><p>
     <!-- TODO: allow input of primary key like an afda number etc -->
 
 
@@ -17,7 +16,7 @@
     {% csrf_token %}
     {{ form.non_field_errors }}
 
-    <h5>Provided Name: {{ csv_name }}</h5>
+    <h5>Provided Name: {{ csv_name }}</h5><br>
     {{ form.selection.errors }}
 
     <div class="span4">
@@ -40,6 +39,7 @@
 <!-- printed results below -->
 
 {% if results %}
+<p>
 {{ results }}
 {% endif %}
 

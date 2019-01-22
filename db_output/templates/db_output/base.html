@@ -1,7 +1,9 @@
 <!DOCTYPE html>
+{% load static %}
 <html lang="en">
 <head>
-    <link rel="stylesheet" href="style.css">
+    <link href="{% static 'style.css' %}" rel="stylesheet">
+
     <title>{% block title %}db_output default title{% endblock %}</title>
 </head>
 
