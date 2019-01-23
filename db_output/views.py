@@ -13,7 +13,7 @@ def contact_us(request):
     return HttpResponse(render(request, 'db_output/contact_us.html', {}))
 
 
-def not_blank_or_anoymous(name):
+def not_blank_or_anonymous(name):
     # 'Anonymous' is inserted by UA for "other team" stats, and Throwaways (as receiver)
     if name and name != 'Anonymous':
         return True
@@ -31,7 +31,7 @@ def test_output(request):
 
     # TODO (lp): streamline data input?
 
-    # apparently dyanmic choices should be done via foreignkey?
+    # apparently dynamic choices should be done via foreignkey?
     # choices needs a list of 2-tuples, [value, humanreadable]
 
     for obj in csvDocument.objects.all():      # TODO (db): redo with better query
@@ -43,9 +43,9 @@ def test_output(request):
 
             fileobj_id = form.cleaned_data['filechoice']
             request.session['file_obj_pk'] = fileobj_id
-            player_list = [x for x in get_player_names(fileobj_id) if not_blank_or_anoymous(x)]
+            player_list = [x for x in get_player_names(fileobj_id) if not_blank_or_anonymous(x)]
+            # TODO (lp) why are there blank names
             request.session['player_list'] = player_list
-                                            # TODO (lp) why are there blank names
 
             return HttpResponseRedirect('confirm_upload_details')
     else:
@@ -68,11 +68,11 @@ def insert_test_data(request):
 
         t = Team(team_name='Default_team', origin='San Francisco, CA', division='Mixed')
         t.save()
-        text = 'You have inserted:' +str(p)+' and '+str(t)
+        text = 'You have inserted:' + str(p) + ' and ' + str(t)
 
     elif please_confirm_delete:
         from .models import csvDocument
-        for i in range(1,5):
+        for i in range(1, 5):
             csvDocument.objects.filter(id=i).delete()
         text = 'deleted'
 
@@ -207,13 +207,16 @@ def confirm_upload_details(request):
             name_validation_form = ValidationForm(match=match)
 
             return render(request, 'db_output/confirm_upload_details.html',
-                          context={'form': name_validation_form, 'csv_name': csv_name, 'results': str(request.session['conversion_dict'])})
+                          context={'form': name_validation_form,
+                                   'csv_name': csv_name,
+                                   'results': str(request.session['conversion_dict'])})
 
         else:
             # reload the page with everything as it was
             name_validation_form = ValidationForm(match=match)
             return render(request, 'db_output/confirm_upload_details.html',
-                          context={'form': name_validation_form, 'csv_name': csv_name,
+                          context={'form': name_validation_form,
+                                   'csv_name': csv_name,
                                    'results': 'Data entered was not valid, please retry'})
 
 

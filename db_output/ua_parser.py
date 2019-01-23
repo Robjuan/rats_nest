@@ -59,7 +59,6 @@ def get_player_names(file_obj_pk):
 
 
 def parse(file_obj_pk, team_obj_pk, conversion_dict):
-
     filename = models.csvDocument.objects.get(pk=file_obj_pk).file.name
     csv_file = open(filename)
     csv_reader = csv.DictReader(csv_file, delimiter=',')
@@ -85,7 +84,6 @@ def parse(file_obj_pk, team_obj_pk, conversion_dict):
         # block 1: first time through initialisation
 
         if index == 0:
-
             this_game = models.Game()
             this_game.datetime = line['Date/Time']
             this_game.tournament_name = line['Tournamemnt']  # UA csv has typo in column name "Tournamemnt"
@@ -95,7 +93,7 @@ def parse(file_obj_pk, team_obj_pk, conversion_dict):
             this_game.save()
 
             # TODO (feat): combine two sets of UA stats into one game
-            # how to set opposing game deatils and stuff
+            # how to set opposing game details and stuff
             # manually subsequently?
             # line['Opponent']
             # check if an appropriate Opponent object exists
@@ -108,26 +106,26 @@ def parse(file_obj_pk, team_obj_pk, conversion_dict):
         # should never be continuing in this block, or handling event-specific data
         # this block is for containers only
 
-        if index > 0: # first event will not require a new possession or point, those are already done
-                        # if either score has increased:
+        if index > 0:  # first event will not require a new possession or point, those are already done
+            # if either score has increased:
             points_completed = line['Our Score - End of Point'] + line['Their Score - End of Point']
-            prev_points_completed = indexed_lines[index-1][1]['Our Score - End of Point'] +\
-                                    indexed_lines[index-1][1]['Their Score - End of Point']
+            prev_points_completed = indexed_lines[index - 1][1]['Our Score - End of Point'] + \
+                                    indexed_lines[index - 1][1]['Their Score - End of Point']
 
             if points_completed > prev_points_completed:
                 this_point.save()
                 this_possession.save()
 
-                this_point = handle_new_point(this_game.game_ID, line) # will never be half at end of first point
+                this_point = handle_new_point(this_game.game_ID, line)  # will never be half at end of first point
                 this_possession = handle_new_possession(this_point.point_ID)
 
-            elif line['Event Type'] != indexed_lines[index-1][1]['Event Type']: # new possession but not new point
+            elif line['Event Type'] != indexed_lines[index - 1][1]['Event Type']:  # new possession but not new point
                 this_possession.save()
 
                 this_possession = handle_new_possession(this_point.point_ID)
 
             else:
-                pass # neither new point nor new possession
+                pass  # neither new point nor new possession
 
         # block 3: event handling
 
@@ -144,8 +142,8 @@ def parse(file_obj_pk, team_obj_pk, conversion_dict):
         # block 3a: check + store players
 
         player_col_list = []
-        for x in range(0,27):
-            col = 'Player '+str(x)
+        for x in range(0, 27):
+            col = 'Player ' + str(x)
             player_col_list.append(col)
 
         this_event = handle_new_event(this_possession.possession_ID, line)
@@ -171,7 +169,8 @@ def parse(file_obj_pk, team_obj_pk, conversion_dict):
 
         if line['Action'] == 'Pull' or line['Action'] == 'PullOB':
             # if we start on defence - first event will be a pull
-            this_pull = handle_new_pull(conversion_dict[line['Defender']], this_point.point_ID, line['Hang Time (secs)'])
+            this_pull = handle_new_pull(conversion_dict[line['Defender']], this_point.point_ID,
+                                        line['Hang Time (secs)'])
 
         # elif line['Action'] == 'D':
 
@@ -238,4 +237,3 @@ def handle_check_player(player_pk):
         return None
     else:
         return models.Player.objects.get(pk=player_pk)
-

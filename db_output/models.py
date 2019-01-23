@@ -9,10 +9,11 @@ class csvDocument(models.Model):
     file = models.FileField(upload_to='csv/')
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
-    parsed = models.BooleanField(null=True)
+    parsed = models.BooleanField()
 
     def __str__(self):
-        return 'csv from '+str(self.your_team_name)+', uploaded at: '+str(self.uploaded_at)[:19]  # cut off secs
+        return 'csv from ' + str(self.your_team_name) + ', uploaded at: ' + str(self.uploaded_at)[:19]  # cut off secs
+
 
 # statistic storage
 
@@ -34,7 +35,7 @@ class Player(models.Model):
                                  blank=True)  # comma separated values in a string
 
     def __str__(self):
-        return 'Player - [id:'+str(self.player_ID)+'] '+str(self.proper_name)
+        return 'Player - [id:' + str(self.player_ID) + '] ' + str(self.proper_name)
 
 
 class Team(models.Model):
@@ -50,7 +51,7 @@ class Team(models.Model):
                                 blank=True)
 
     def __str__(self):
-        return 'Team - [id:'+str(self.team_ID)+'] '+str(self.team_name)
+        return 'Team - [id:' + str(self.team_ID) + '] ' + str(self.team_name)
 
 
 class Game(models.Model):
@@ -61,15 +62,15 @@ class Game(models.Model):
 
     # SET_NULL means that if you delete the referenced team, this just goes to null
     opposing_team = models.ForeignKey(Team,
-                                         on_delete=models.SET_NULL,
-                                         blank=True,
-                                         null=True,
-                                         related_name='opposition')
+                                      on_delete=models.SET_NULL,
+                                      blank=True,
+                                      null=True,
+                                      related_name='opposition')
     opposing_game = models.ForeignKey('self',
-                                         on_delete=models.SET_NULL,
-                                         blank=True,
-                                         null=True,
-                                         related_name='opposition_game')
+                                      on_delete=models.SET_NULL,
+                                      blank=True,
+                                      null=True,
+                                      related_name='opposition_game')
 
     file_model = models.ForeignKey(csvDocument,
                                    on_delete=models.PROTECT)
@@ -84,34 +85,34 @@ class Game(models.Model):
                                   blank=True)
 
     def __str__(self):
-        return 'Game - [id:'+str(self.game_ID)+'] '+str(self.datetime)
+        return 'Game - [id:' + str(self.game_ID) + '] ' + str(self.datetime)
 
 
 class Point(models.Model):
     point_ID = models.AutoField(primary_key=True)
     # CASCADE means that if the game is deleted, all the relevant points will be deleted too
     game = models.ForeignKey(Game,
-                                models.CASCADE)
+                             models.CASCADE)
 
     # non-key
     point_elapsed_seconds = models.IntegerField()
-    startingfence = models.CharField(max_length=30) # not 100% settled on this
+    startingfence = models.CharField(max_length=30)  # not 100% settled on this
     ourscore_EOP = models.IntegerField()  # EOP = end of point
     theirscore_EOP = models.IntegerField()
     halfatend = models.BooleanField(default=False)
 
     def __str__(self):
-        return 'Point - [id:'+str(self.point_ID)+'] game:'+str(self.game) +\
-               ',[us|them]: ['+str(self.ourscore_EOP)+'|'+str(self.theirscore_EOP)+']'
+        return 'Point - [id:' + str(self.point_ID) + '] game:' + str(self.game) + \
+               ',[us|them]: [' + str(self.ourscore_EOP) + '|' + str(self.theirscore_EOP) + ']'
 
 
 class Pull(models.Model):
     pull_ID = models.AutoField(primary_key=True)
     # PROTECT will error if the player is deleted when pulls exist
     player = models.ForeignKey(Player,
-                                  on_delete=models.PROTECT)
+                               on_delete=models.PROTECT)
     point = models.ForeignKey(Point,
-                             on_delete=models.CASCADE)
+                              on_delete=models.CASCADE)
 
     # non-key
     hangtime = models.DecimalField(null=True,
@@ -125,16 +126,17 @@ class Pull(models.Model):
 class Possession(models.Model):
     possession_ID = models.AutoField(primary_key=True)
     point = models.ForeignKey(Point, on_delete=models.CASCADE)
+
     # if the point is deleted, delete relevant possessions
 
     def __str__(self):
-        return 'Possession - [id:'+str(self.possession_ID)+']'
+        return 'Possession - [id:' + str(self.possession_ID) + ']'
 
 
 class Event(models.Model):
     event_ID = models.AutoField(primary_key=True)
     possession = models.ForeignKey(Possession,
-                                      on_delete=models.CASCADE)
+                                   on_delete=models.CASCADE)
     players = models.ManyToManyField(Player,
                                      related_name='players_onfield')
     # if the possession is deleted, delete relevant events
@@ -158,4 +160,4 @@ class Event(models.Model):
     elapsedtime = models.IntegerField()
 
     def __str__(self):
-        return 'Event - [id:'+str(self.event_ID)+']'
+        return 'Event - [id:' + str(self.event_ID) + ']'
