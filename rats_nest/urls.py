@@ -28,7 +28,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('db_output/', include('db_output.urls')),
     path('accounts/', include('django.contrib.auth.urls')),
-    path('', v.index, name='index')
+    path('', v.index, name='index')  # this might be a hack? sends all blank to db_output/
 ]
 
 # URLs provided by auth are:
