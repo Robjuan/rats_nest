@@ -1,0 +1,26 @@
+{% extends 'db_output/base_bootstrap.html' %}
+
+{% block title %} MVP - Verify {% endblock %}
+
+{% block content %}
+
+    {% if to_confirm %} <!-- branch 2 of confirm_upload_details sends 'to_confirm' -->
+
+        <h3> The below conversion dictionary was created based on your validation inputs.<br></h3>
+        <h4>Confirm will save your inputs and take you to the results of the parser.<br>
+        Cancel will return you to the file select page.</h4>
+
+        {{ to_confirm }}
+
+        <form method="post">
+            {% csrf_token %}
+            {{ verify_confirm }}
+            <button type="submit">Confirm</button>
+        </form>
+
+        <a class="btn" href="{% url 'test_output' %}">Cancel</a>
+        <!-- TODO: check that session data is cleaned via this exit -->
+
+    {% endif %}
+
+{% endblock %}

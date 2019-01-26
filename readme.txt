@@ -1,37 +1,34 @@
 RATS_NEST
 Rob Andy Take Stats - Nearly Every Stat Taken
 
-Eventually this will be:
-* db_output - take csv in, make basic stats available
-* rats_analysis - advanced analytics
-* rats_nest - the backend / server etc that powers this
+This platform will allow us to take in stats output by UltiAnalytics, and store them persistently, to enable taking longitudinal "career" stats.
+Additionally, the database structure will allow us to more readily write advanced analysis packages and produce higher-order stats.
 
-This is a web app done on Heroku, with Django as the framework.
-PostgreSQL is our database.
+Heroku is our server/backend, Django is the framework, PostgreSQL is our database.
 PostgreSQL version must be 11.1+
-> 11.0 has bug that affect us
+
+
+
+
+
 
 Workflow:
 
 ## Active Development:
-ensure running using 'local_development' settings, or custom
-*** to ensure: 
-set Environment Variable 'DJANGO_SETTINGS_MODULE' to 'rats_nest.settings.local_development'
-on mac this is "export DJANGO_SETTINGS_MODULE rats_nest.settings.local_development'
 
+local_development (or custom) settings to be used.
+(requires env variable DJANGO_SETTINGS_MODULE = 'rats_nest.settings.local_development')
+heroku cli is used to test locally. (heroku local)
 
-Write code locally
-run heroku local to test
-Commit to working_dev branch of repo
+Merge working_dev branch to master branch when major milestones are completed locally.
 
 ## Remote Development:
-**
-** CHECK WITH PARTNER BEFORE DOING THIS - security leaks here will expose our database
-**
-Log in to Heroku > Deploy > Manual Deploy (at bottom)
-Deploy the working_dev branch.
-Roll back to master when done?
 
+** CHECK WITH PARTNER BEFORE DOING THIS - security leaks here will expose our database
+** need to build a database protection process (investigate heroku options)
+
+Log in to Heroku > Deploy > Manual Deploy (at bottom)
+Deploy the appropriate branch (typically master, not sure on best practice here)
 
 ## Production Deployment:
 

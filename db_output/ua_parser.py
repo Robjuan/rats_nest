@@ -62,7 +62,7 @@ def get_player_names(file_obj_pk):
 # Elapsed Time (sec)
 
 
-def parse(file_obj_pk, team_obj_pk, conversion_dict):
+def parse(file_obj_pk, team_obj_pk, conversion_dict, verify=True):
     csv_obj = models.csvDocument.objects.get(pk=file_obj_pk)
     filename = csv_obj.file.name
     csv_file = open(filename)
@@ -94,6 +94,7 @@ def parse(file_obj_pk, team_obj_pk, conversion_dict):
             this_game.tournament_name = line['Tournamemnt']  # UA csv has typo in column name "Tournamemnt"
             this_game.file_model = models.csvDocument.objects.get(pk=file_obj_pk)
             this_game.team = models.Team.objects.get(pk=team_obj_pk)
+            this_game.verified = verify
 
             this_game.save()
 

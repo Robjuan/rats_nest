@@ -32,8 +32,14 @@ class Player(models.Model):
     nickname = models.CharField(max_length=255,
                                 blank=True)
 
+    numbers = models.CharField(max_length=255,
+                               blank=True)
+
     csv_names = models.CharField(max_length=255,
                                  blank=True)  # comma separated values in a string
+
+    class Meta:
+        ordering = ('proper_name',)
 
     def __str__(self):
         return 'Player - [id:' + str(self.player_ID) + '] ' + str(self.proper_name)
@@ -87,6 +93,9 @@ class Game(models.Model):
                                 blank=True)
     conditions = models.CharField(max_length=30,
                                   blank=True)
+
+    # verification is just an extra flag for us to show what is legit data - will mostly be on
+    verified = models.BooleanField()
 
     class Meta:
         ordering = ('datetime',)

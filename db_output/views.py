@@ -104,6 +104,7 @@ def upload_csv(request):
 
     # this permission check might be duplicative as it is also checked in the template
     # TODO: this permission doesn't actually exist, but rob_development is a superuser so has_perm always returns True
+    # so is rats_development
 
     if request.method == 'POST' and request.user.has_perm('db_output.can_upload_csv'):
         form = csvDocumentForm(request.POST, request.FILES)
@@ -119,11 +120,9 @@ def upload_csv(request):
 def fetch_match(csv_name):
     from .models import Player
 
-    # TODO (db): redo this with a more efficient query
-
     for stored_player in Player.objects.all():
         if csv_name in stored_player.csv_names or csv_name == stored_player.proper_name:
-            return stored_player  # TODO (lp): handle multiple matches
+            return stored_player
 
     # only if no match found
     return None
@@ -131,11 +130,11 @@ def fetch_match(csv_name):
 
 def confirm_upload_details(request):
     # from .models import Player
-    from .forms import ValidationForm
+    from .forms import ValidationForm, VerifyConfirmForm
 
     # FIXME: if you refresh you redo the GET part with no processing
 
-    # TODO: take in more information about the player, compare on more than name
+    # TODO: replace radio with select2 search by type modelForm
 
     # this view should have three branches
     # 1 - GET
@@ -205,14 +204,20 @@ def confirm_upload_details(request):
 
             # Branch 2:
             if not player_list:  # if we have looped over everyone
-                results = []
+                to_confirm = []
                 temp_dict = request.session['conversion_dict']
                 for k, v in temp_dict.items():
-                    results.append((k, v))
+                    to_confirm.append((k, v))
 
-                # TODO (lp): best format for showing this to the user before confirmation?
+                # TODO (lp): show ALL data that will be saved to db in humanreadable format
 
-                return render(request, 'db_output/show_output.html', context={'results': results})
+
+                # TODO: include "verify" checkbox - we'll need a view to process the post of verify?
+                request.session['verify'] = True
+                verify_confirm = VerifyConfirmForm()
+
+                return render(request, 'db_output/verify_output.html', context={'to_confirm': to_confirm,
+                                                                                'verify_confirm': verify_confirm})
 
             csv_name = player_list.pop()
             request.session['player_list'] = player_list
@@ -226,7 +231,7 @@ def confirm_upload_details(request):
                                    'results': str(request.session['conversion_dict'])})
 
         else:
-            # reload the page with everything as it was
+            # reload the page with everything as it was if invalid input
             name_validation_form = ValidationForm(match=match)
             return render(request, 'db_output/confirm_upload_details.html',
                           context={'form': name_validation_form,
@@ -234,12 +239,30 @@ def confirm_upload_details(request):
                                    'results': 'Data entered was not valid, please retry'})
 
 
+def verify_output(request):
+    from .forms import VerifyConfirmForm
+    logger = logging.getLogger(__name__)
+
+    if request.method == 'GET':
+        logger.warning('arrived at verify output via GET')
+
+    elif request.method == 'POST':
+        verify_confirm = VerifyConfirmForm(request.POST)
+        if verify_confirm.is_valid():
+            if 'verify' in verify_confirm.cleaned_data:
+                request.session['verify'] = verify_confirm.cleaned_data['verify']
+
+            request.session['go_to_dpr'] = True
+            return HttpResponseRedirect('display_parse_results')
+
+
 def display_parse_results(request):
 
     from .ua_parser import parse
     from . import models
 
-    # TODO: build out confirm/cancel into a proper form, check which button is pressed to ensure proper entry here
+    if 'go_to_dpr' not in request.session:
+        return HttpResponseRedirect('index')  # TODO (lp) is this insecure?
 
     all_players = []
     for player_pk in request.session['matched_to_update']:
@@ -276,7 +299,8 @@ def display_parse_results(request):
         this_team.players.add(player.player_ID)
     this_team.save()
 
-    parsed_results = parse(request.session['file_obj_pk'], team_obj_pk, request.session['conversion_dict'])
+    parsed_results = parse(request.session['file_obj_pk'], team_obj_pk,
+                           request.session['conversion_dict'], verify=request.session['verify'])
     # currently this just gives us a success indicating string
 
     return render(request, 'db_output/show_output.html', context={'parsed_results': parsed_results})

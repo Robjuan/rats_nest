@@ -1,9 +1,13 @@
-VERIFY HEROKU ACCOUNT
-GET PAPERTRAIL GOING
-WORK OUT WHY IT ISN'T RUNNING REMOTELY
+See TODO / FIXME in code. Pycharm will sort these in the bottom left.
+
+** STRESS TEST PARSER **
+* Product labelled test data
+** create unit tests
+
 
 
 Overarching design concerns/thoughts:
+
 # is it too linear? 
 I am building a flow of screens to take the csv, add data as required,/
 and end up with good datasets. 
@@ -11,17 +15,12 @@ Almost certainly exists potential for breakage if we access pages/
 in the wrong order. Can I control access to make sure the linear flow I'm/
 designing is the only possible route through the relevant pages?
 
-** ENFORCE EXPECTED FLOW
+# inconsistency on how we are moving from view to view
+most often just a simple render, sometimes HttpResponse, sometimes redirect
+- I think if we stay away from simple URL movement we should be ok
 
-parse() crashes if accessed before uploading new csv - only remotely ???
 
-** Objective:
-MINIMUM VIABLE PRODUCT:
-1. Build .csv upload capability ** DONE
-2. Build .csv -> db parser ** DONE
-3. Build db output capability ** DONE
 
-** STRESS TEST PARSER **
 
 REMOTE ONLY ISSUES (usually storage/db related)
 after uploading a new csv, fetching works

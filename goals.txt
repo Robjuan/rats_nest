@@ -1,14 +1,12 @@
 Eventual Goals:
 
 Features:
-- user registration system
-- player validation will multiple options
-- team validation
+- robust player/team validation
+- combining/linking two UA games
+- analysis packages across multiple teams/seasons
+- control over who can view stats
 
-- control over who can view stats - flag on game, cascade all the way down to events
-
-- style.css
-
-Structure:
-- use a lot of premade apps/functions
-
+To be discussed:
+- user registration / end-user upload
+- pulling straight from UA using API
+- personal stats distinct from main database

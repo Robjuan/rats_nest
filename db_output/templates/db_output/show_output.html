@@ -33,9 +33,14 @@
 
         {{ results }}
 
-        <p>
-        <a class="btn" href="{% url 'display_parse_results' %}">Confirm</a><br>
+        <form method="post">
+            {% csrf_token %}
+            {{ verify_confirm }}
+            <button type="submit">Confirm</button>
+        </form>
+
         <a class="btn" href="{% url 'test_output' %}">Cancel</a>
+        <!-- TODO: check that session data is cleaned via this exit -->
 
     {% endif %}
 

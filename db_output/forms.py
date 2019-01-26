@@ -96,6 +96,5 @@ class AnalysisForm(forms.Form):
                                                                   widget=forms.CheckboxSelectMultiple)
 
 
-
-    # functions are getting cleaned out
-    # why is this
+class VerifyConfirmForm(forms.Form):
+    pass
