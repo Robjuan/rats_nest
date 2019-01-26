@@ -28,6 +28,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('db_output/', include('db_output.urls')),
     path('accounts/', include('django.contrib.auth.urls')),
+    path(r'select2/', include('django_select2.urls')),  # django_select2
     path('', v.index, name='index')  # this might be a hack? sends all blank to db_output/
 ]
 

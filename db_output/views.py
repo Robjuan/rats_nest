@@ -1,11 +1,12 @@
 from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
-
-# only required for method 2 , simple saving
-from django.core.files.storage import default_storage
+from django.conf import settings
+import logging
 
 
 def index(request):
+    logger = logging.getLogger(__name__)
+    logger.info('index.html accessed')
     return HttpResponse(render(request, 'db_output/index.html', {}))
 
 
@@ -18,6 +19,9 @@ def not_blank_or_anonymous(name):
     if name and name != 'Anonymous':
         return True
     else:
+        if not name:
+            logger = logging.getLogger(__name__)
+            logger.debug('Blank name being filtered')
         return False
 
 
@@ -27,6 +31,8 @@ def test_output(request):
     from .forms import fileSelector
     from .models import csvDocument
 
+    logger = logging.getLogger(__name__)
+
     filelist = []
 
     # TODO (lp): streamline data input?
@@ -34,8 +40,16 @@ def test_output(request):
     # apparently dynamic choices should be done via foreignkey?
     # choices needs a list of 2-tuples, [value, humanreadable]
 
-    for obj in csvDocument.objects.all():      # TODO (db): redo with better query
-        filelist.append((obj.id, str(obj)))
+    if settings.DEBUG:
+        for obj in csvDocument.objects.all():
+            logger.warning('presenting parsed objects as parseable')
+            if obj.parsed:
+                filelist.append((obj.id, 'parsed: '+str(obj)))
+            else:
+                filelist.append((obj.id, str(obj)))
+    else:
+        for obj in csvDocument.objects.filter(parsed=False):
+            filelist.append((obj.id, str(obj)))
 
     if request.method == 'POST':
         form = fileSelector(request.POST, choices=filelist)
@@ -61,7 +75,7 @@ def insert_test_data(request):
     please_confirm_insert = False
     please_confirm_delete = False
 
-    if please_confirm_insert:
+    if please_confirm_insert and settings.DEBUG:
         from .models import Player, Team
         p = Player(proper_name='Anonymous', hometown='San Francisco, CA', csv_names='Anonymous')
         p.save()
@@ -70,7 +84,7 @@ def insert_test_data(request):
         t.save()
         text = 'You have inserted:' + str(p) + ' and ' + str(t)
 
-    elif please_confirm_delete:
+    elif please_confirm_delete and settings.DEBUG:
         from .models import csvDocument
         for i in range(1, 5):
             csvDocument.objects.filter(id=i).delete()
@@ -225,9 +239,7 @@ def display_parse_results(request):
     from .ua_parser import parse
     from . import models
 
-    # we get to this view from confirm being pushed # TODO: make sure that's the only way
-    # if not (where we came from) == (confirm_upload_details)
-    #   return home
+    # TODO: build out confirm/cancel into a proper form, check which button is pressed to ensure proper entry here
 
     all_players = []
     for player_pk in request.session['matched_to_update']:
@@ -270,5 +282,43 @@ def display_parse_results(request):
     return render(request, 'db_output/show_output.html', context={'parsed_results': parsed_results})
 
 
+def present_stats(request):
+    from .forms import AnalysisForm
+    from .analysis import get_all_analyses, null_analysis, second_null_analysis
 
+    logger = logging.getLogger(__name__)
+
+    # django forms don't like it when we pass functions as the value in (value, name) tuple of analysis_choices
+    # so we can index it, then get back an index which will match a function in the actual list
+    analysis_options = get_all_analyses()
+
+    indexed_analysis_options = enumerate(analysis_options)
+    widget_choices = []
+    for a_index, a_tuple in indexed_analysis_options:
+        widget_choices.append((a_index, a_tuple[1]))  # tuple is (obj, name)
+
+    if request.method == 'GET':
+        aform = AnalysisForm(analysis_choices=widget_choices)
+
+        return HttpResponse(render(request, 'db_output/present_stats.html', {'selector': aform}))
+
+    elif request.method == 'POST':
+        aform = AnalysisForm(request.POST, analysis_choices=widget_choices)
+        if aform.is_valid():
+            func_indices = aform.cleaned_data['analysischoice']
+            game = aform.cleaned_data['game']
+            team = aform.cleaned_data['team']
+
+            results = []
+            for a_index in func_indices:
+
+                new_data = analysis_options[int(a_index)][0](game=game, team=team)
+
+                results.append(new_data)
+            return HttpResponse(render(request, 'db_output/present_stats.html', {'analysis': str(results)}))
+
+        else:
+            logger.warning('form not valid')
+            aform = AnalysisForm(analysis_choices=widget_choices)
+            return HttpResponse(render(request, 'db_output/present_stats.html', {'selector': aform}))
 

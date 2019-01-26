@@ -8,6 +8,7 @@ class csvDocument(models.Model):
     description = models.CharField(max_length=255, blank=True)
     file = models.FileField(upload_to='csv/')
     uploaded_at = models.DateTimeField(auto_now_add=True)
+    season = models.IntegerField()
 
     parsed = models.BooleanField()
 
@@ -50,13 +51,16 @@ class Team(models.Model):
     division = models.CharField(max_length=30,
                                 blank=True)
 
+    class Meta:
+        ordering = ('team_name',)
+
     def __str__(self):
         return 'Team - [id:' + str(self.team_ID) + '] ' + str(self.team_name)
 
 
 class Game(models.Model):
     game_ID = models.AutoField(primary_key=True)
-    team = models.ForeignKey(Team, on_delete=models.PROTECT)
+    team = models.ForeignKey(Team, on_delete=models.PROTECT, related_name='this_team')
     # need to handle a way to save the opposing team name without creating too much junk
     # if we only know the name
 
@@ -84,8 +88,11 @@ class Game(models.Model):
     conditions = models.CharField(max_length=30,
                                   blank=True)
 
+    class Meta:
+        ordering = ('datetime',)
+
     def __str__(self):
-        return 'Game - [id:' + str(self.game_ID) + '] ' + str(self.datetime)
+        return 'Game - [id:' + str(self.game_ID) + '] ' + str(self.tournament_name) + ' @ ' + str(self.datetime)[:19]
 
 
 class Point(models.Model):

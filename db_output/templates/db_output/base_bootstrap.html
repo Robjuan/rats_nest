@@ -14,6 +14,10 @@
 
     <title>{% block title %}{% endblock %}</title>
 
+    <!-- for django_select2 css, load jquery first up -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    {% block extra_head %}{% endblock %}
+
     <!-- Bootstrap core CSS -->
     <link href="{% static 'bootstrap_css/vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
 
@@ -36,6 +40,7 @@
                     <li><a href="{% url 'index' %}">Home</a></li>
                     <li><a href="{% url 'test_output' %}">Parse an uploaded csv</a></li>
                     <li><a href="{% url 'upload_csv' %}">Upload a new UA csv</a></li>
+                    <li><a href="{% url 'present_stats' %}">Present Stats</a></li>
                     <li><a href="/admin">Access the admin portal</a></li> <!-- django backend is hardcoded -->
                     <li><a href="{% url 'contact_us' %}">Contact Us</a></li>
                     <li><hr></li>
@@ -62,7 +67,7 @@
 
                     {% block content %}{% endblock %}
 
-                    <p><p><a href="#menu-toggle" class="btn btn-secondary" id="menu-toggle">Toggle Menu</a>
+                    <hr><a href="#menu-toggle" class="btn btn-secondary" id="menu-toggle">Toggle Menu</a>
                 </div>
             </div>
         </div>

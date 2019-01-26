@@ -1,4 +1,5 @@
 from django import forms
+from django_select2.forms import ModelSelect2Widget
 
 from .models import csvDocument
 
@@ -6,7 +7,7 @@ from .models import csvDocument
 class csvDocumentForm(forms.ModelForm):
     class Meta:
         model = csvDocument
-        fields = ('your_team_name', 'description', 'file')
+        fields = ('your_team_name', 'season', 'description', 'file')
 
 
 class fileSelector(forms.Form):
@@ -40,7 +41,7 @@ class ValidationForm(forms.Form):
         if 'match' in kwargs:
             self.match = kwargs.pop('match')
             if self.match == 'None':
-                self.match = None  # TODO (lp): this feels not pythonic
+                self.match = None  # this feels not pythonic
         else:
             self.match = None
 
@@ -59,3 +60,42 @@ class ValidationForm(forms.Form):
         # match isn't part of cleaned_data but we still want to know if one exists
         # 20/1/18 is this being used anywhere?
         return self.match
+
+
+class AnalysisForm(forms.Form):
+    from .models import Team, Game
+
+    team = forms.ModelChoiceField(
+        queryset=Team.objects.all(),
+        label="Team",
+        widget=ModelSelect2Widget(
+            model=Team,
+            search_fields=['team_name__icontains'],
+            attrs={'data-width': '75%'},  # resolve is giving me 35px whether explicit or implicit
+
+        )
+    )
+
+    game = forms.ModelChoiceField(
+        queryset=Game.objects.all(),
+        label="Game",
+        widget=ModelSelect2Widget(
+            model=Game,
+            search_fields=['tournament_name'],
+            dependent_fields={'team': 'team'},  # TODO: test dependency against multiple entries etc
+            max_results=500,
+            attrs={'data-width': '75%'},
+
+        )
+    )
+
+    def __init__(self, *args, **kwargs):
+        analysis_choices = kwargs.pop('analysis_choices')
+        super().__init__(*args,**kwargs)
+        self.fields['analysischoice'] = forms.MultipleChoiceField(choices=analysis_choices,
+                                                                  widget=forms.CheckboxSelectMultiple)
+
+
+
+    # functions are getting cleaned out
+    # why is this

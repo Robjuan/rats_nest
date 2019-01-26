@@ -1,11 +1,14 @@
 # this shit requires the following environment variable:
 # DJANGO_SETTINGS_MODULE=rats_nest.settings.local_development
 
-
 from .base import *
-import dj_database_url, os
+import dj_database_url
+import logging
+logger = logging.getLogger(__name__)
 
 DEBUG = True
+#DEBUG_PROPAGATE_EXCEPTIONS = True
+
 
 ALLOWED_HOSTS = ['*']
 
@@ -17,7 +20,4 @@ TIME_ZONE = 'UTC'
 DATABASES['default'] = dj_database_url.parse('postgres://rats_user:RatFriends420@localhost/rats_database',
                                               conn_max_age=600)
 
-print('local development settings loaded')
-
-if os.environ.get('DEBUG'):
-    print('DATABASES = ' + str(DATABASES))
+logger.info('local development settings loaded')

@@ -50,6 +50,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    'django_select2',
+
     'db_output'
 ]
 
@@ -129,6 +131,8 @@ django_heroku.settings(locals())
 
 # https://devcenter.heroku.com/articles/heroku-postgresql#connecting-in-python
 
+ADMINS = (('Rats Email', 'rob.andy.take.stats@gmail.com'),)
+MANAGERS = ADMINS
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.1/howto/static-files/
@@ -141,43 +145,67 @@ STATICFILES_DIRS = ['staticfiles']
 
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
-
-if os.environ.get('DEBUG'):
-    print('base settings loaded')
-
 # Log configuration
 
-DEBUG_PROPAGATE_EXCEPTIONS = True
+# https://www.webforefront.com/django/setupdjangologging.html
 
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'filters': {
+        'require_debug_false': {
+            '()': 'django.utils.log.RequireDebugFalse',
+        },
+        'require_debug_true': {
+            '()': 'django.utils.log.RequireDebugTrue',
+        },
+    },
     'formatters': {
-        'verbose': {
-            'format': ('%(asctime)s [%(process)d] [%(levelname)s] ' +
-                       'pathname=%(pathname)s lineno=%(lineno)s ' +
-                       'funcname=%(funcName)s %(message)s'),
+        'simple': {
+            'format': '[%(asctime)s] %(levelname)s %(message)s',
             'datefmt': '%Y-%m-%d %H:%M:%S'
         },
-        'simple': {
-            'format': '%(levelname)s %(message)s'
-        }
+        'verbose': {
+            'format': '[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] %(message)s',
+            'datefmt': '%Y-%m-%d %H:%M:%S'
+        },
     },
     'handlers': {
-        'null': {
-            'level': 'DEBUG',
-            'class': 'logging.NullHandler',
-        },
         'console': {
             'level': 'DEBUG',
+            'filters': ['require_debug_true'],
             'class': 'logging.StreamHandler',
             'formatter': 'verbose'
-        }
+        },
+        'null': {
+            'class': 'logging.NullHandler',
+        },
+        # 'mail_admins': {
+        #     'level': 'ERROR',
+        #     'filters': ['require_debug_false'],
+        #     'class': 'django.utils.log.AdminEmailHandler'
+        # }
+    },
+    'root': {
+        'level': 'DEBUG',
+        'handlers': ['console'],
     },
     'loggers': {
-        'testlogger': {
+        'django': {
             'handlers': ['console'],
-            'level': 'INFO',
-        }
+        },
+        # 'django.request': {
+        #     'handlers': ['mail_admins'],
+        #     'level': 'ERROR',
+        #     'propagate': False,
+        # },
+        # 'django.security': {
+        #     'handlers': ['mail_admins'],
+        #     'level': 'ERROR',
+        #     'propagate': False,
+        # },
+        'py.warnings': {
+            'handlers': ['console'],
+        },
     }
 }

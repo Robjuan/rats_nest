@@ -1,7 +1,10 @@
-import os, django_heroku, dj_database_url
+import dj_database_url, logging
 from .base import *
 
+logger = logging.getLogger(__name__)
+
 DEBUG = False
+DEBUG_PROPAGATE_EXCEPTIONS = False
 
 ALLOWED_HOSTS = ['rats-nest-420.herokuapp.com']
 
@@ -16,4 +19,4 @@ DATABASES = {
 
 DATABASES['default'].update(dj_database_url.config())  # now working on remote heroku !!!
 
-print('heroku_production settings loaded')
+logger.info('heroku_production settings loaded')

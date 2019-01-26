@@ -1,8 +1,12 @@
 # this is where the magic happens
 # this file will parse UA-generated csv files and save them to models
 
+# TODO: there's no checking at all to see if the file matches the structure we're expecting
+# it just crashes - we should log errors and quit? blame the user.
+
 import csv
 from . import models
+import logging
 
 
 def get_player_names(file_obj_pk):
@@ -59,7 +63,8 @@ def get_player_names(file_obj_pk):
 
 
 def parse(file_obj_pk, team_obj_pk, conversion_dict):
-    filename = models.csvDocument.objects.get(pk=file_obj_pk).file.name
+    csv_obj = models.csvDocument.objects.get(pk=file_obj_pk)
+    filename = csv_obj.file.name
     csv_file = open(filename)
     csv_reader = csv.DictReader(csv_file, delimiter=',')
     # DictReader means that each line is a dictionary, with name:value determined by column name:column value
@@ -183,6 +188,8 @@ def parse(file_obj_pk, team_obj_pk, conversion_dict):
         this_event.save()
 
     csv_file.close()
+    csv_obj.parsed = True
+    csv_obj.save()
     return 'SUCCESSFULLY REACHED END OF PARSE'
 
 

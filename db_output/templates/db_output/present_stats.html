@@ -1,0 +1,40 @@
+{% extends 'db_output/base_bootstrap.html' %}
+
+<!-- for django_select2 css -->
+{% if selector %} {% block extra_head %} {{ selector.media.css }} {% endblock %} {% endif %}
+
+
+{% block title %} MVP - Stats {% endblock %}
+
+{% block content %}
+
+    {% if selector %}
+    {{ selector.media.js }}
+
+    <h3> Please select a Team and Game: </h3>
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        {{ selector.team.label_tag }} {{ selector.team }}<br><p></p>
+        {{ selector.game.label_tag }} {{ selector.game }}
+
+        <p></p>
+        <h3> Please select one or more analyses to run:</h3>
+        {{ selector.analysischoice }}
+
+        <button type="submit">Analyse</button>
+
+    </form>
+
+    {% endif %}
+
+
+    {% if analysis %}
+
+        {{ analysis }}
+
+    {% endif %}
+
+
+{% endblock %}
