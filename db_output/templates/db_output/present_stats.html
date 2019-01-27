@@ -1,4 +1,5 @@
 {% extends 'db_output/base_bootstrap.html' %}
+{% if extra_head %} {{ extra_head }} {% endif %}
 
 <!-- for django_select2 css -->
 {% if selector %} {% block extra_head %} {{ selector.media.css }} {% endblock %} {% endif %}

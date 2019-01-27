@@ -131,6 +131,7 @@ def fetch_match(csv_name):
 def confirm_upload_details(request):
     # from .models import Player
     from .forms import ValidationForm, VerifyConfirmForm
+    logger = logging.getLogger(__name__)
 
     # FIXME: if you refresh you redo the GET part with no processing
 
@@ -216,8 +217,10 @@ def confirm_upload_details(request):
                 request.session['verify'] = True
                 verify_confirm = VerifyConfirmForm()
 
+                logger.debug('sending to verify_output')
                 return render(request, 'db_output/verify_output.html', context={'to_confirm': to_confirm,
-                                                                                'verify_confirm': verify_confirm})
+                                                                                'verify_confirm': verify_confirm,
+                                                                                'extra_head': __name__})
 
             csv_name = player_list.pop()
             request.session['player_list'] = player_list

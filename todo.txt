@@ -16,8 +16,8 @@ in the wrong order. Can I control access to make sure the linear flow I'm/
 designing is the only possible route through the relevant pages?
 
 # inconsistency on how we are moving from view to view
-most often just a simple render, sometimes HttpResponse, sometimes redirect
-- I think if we stay away from simple URL movement we should be ok
+HttpResponse is simplest, only for small responses
+Render allows use of template properly
 
 
 

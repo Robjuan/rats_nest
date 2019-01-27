@@ -1,4 +1,5 @@
 {% extends 'db_output/base_bootstrap.html' %}
+{% if extra_head %} {{ extra_head }} {% endif %}
 
 {% block title %} MVP - Output {% endblock %}
 
@@ -24,26 +25,6 @@
         {% endif %}
 
     {% endif %}
-
-    {% if results %} <!-- branch 3 of confirm_upload_details sends 'results' -->
-
-        <h3> The below conversion dictionary was created based on your validation inputs.<br></h3>
-        <h4>Confirm will save your inputs and take you to the results of the parser.<br>
-        Cancel will return you to the file select page.</h4>
-
-        {{ results }}
-
-        <form method="post">
-            {% csrf_token %}
-            {{ verify_confirm }}
-            <button type="submit">Confirm</button>
-        </form>
-
-        <a class="btn" href="{% url 'test_output' %}">Cancel</a>
-        <!-- TODO: check that session data is cleaned via this exit -->
-
-    {% endif %}
-
 
     {% if teamvalidation %} <!-- [x] sends 'teamvalidation' -->
 
