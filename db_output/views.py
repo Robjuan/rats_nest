@@ -1,35 +1,54 @@
+# views.py
+# contains the logic for presenting all non-trivial pages on the site
+
 from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
 from django.conf import settings
 import logging
 
 
-def index(request):
-    logger = logging.getLogger(__name__)
-    logger.info('index.html accessed')
-    return HttpResponse(render(request, 'db_output/index.html', {}))
+def upload_csv(request):
+    """
+    Handles logic for upload_csv page
+    Uses "upload_csv" for itself, redirects to "parse_select" on success
 
+    Category: Upload
+    :param request: django object
+    :return: response object
+    """
+    from .forms import csvDocumentForm
 
-def contact_us(request):
-    return HttpResponse(render(request, 'db_output/contact_us.html', {}))
+    # TODO (feat): take in more information about the game (location, conditions etc)
+    # use tags for conditions
 
+    # this permission check might be duplicative as it is also checked in the template
+    # TODO: this permission doesn't actually exist, but rob_development is a superuser so has_perm always returns True
+    # so is rats_development
 
-def not_blank_or_anonymous(name):
-    # 'Anonymous' is inserted by UA for "other team" stats, and Throwaways (as receiver)
-    if name and name != 'Anonymous':
-        return True
+    if request.method == 'POST' and request.user.has_perm('db_output.can_upload_csv'):
+        form = csvDocumentForm(request.POST, request.FILES)
+        if form.is_valid():
+            form.save()
+            # TODO: check we're not saving/parsing the same game (datetime, tournament name)
+            return HttpResponseRedirect('parse_select')  # show if something got added
     else:
-        if not name:
-            logger = logging.getLogger(__name__)
-            logger.debug('Blank name being filtered')
-        return False
+        form = csvDocumentForm()
+        return render(request, 'db_output/upload_csv.html', {'form': form})
 
 
-def test_output(request):
+def parse_select(request):
+    """
+    Handles display of file selection at start of parse flow
+
+    Category: Parse
+    :param request: django request object
+    :return: response object
+    """
 
     from .ua_parser import get_player_names
     from .forms import fileSelector
     from .models import csvDocument
+    from .helpers import not_blank_or_anonymous
 
     logger = logging.getLogger(__name__)
 
@@ -61,76 +80,23 @@ def test_output(request):
             # TODO (lp) why are there blank names
             request.session['player_list'] = player_list
 
-            return HttpResponseRedirect('confirm_upload_details')
+            return HttpResponseRedirect('parse_validate_player')
     else:
         form = fileSelector(choices=filelist)
-        return render(request, 'db_output/show_output.html', {'form': form})
+        return render(request, 'db_output/parse_select.html', {'form': form})
 
 
-def insert_test_data(request):
+def parse_validate_player(request):
+    """
+    Handles display of player validation pages
 
-    # PLEASE BE VERY CAREFUL WITH MANUAL ADDITION AND SUBTRACTION
-    # Use the Admin portal for one offs
-
-    please_confirm_insert = False
-    please_confirm_delete = False
-
-    if please_confirm_insert and settings.DEBUG:
-        from .models import Player, Team
-        p = Player(proper_name='Anonymous', hometown='San Francisco, CA', csv_names='Anonymous')
-        p.save()
-
-        t = Team(team_name='Default_team', origin='San Francisco, CA', division='Mixed')
-        t.save()
-        text = 'You have inserted:' + str(p) + ' and ' + str(t)
-
-    elif please_confirm_delete and settings.DEBUG:
-        from .models import csvDocument
-        for i in range(1, 5):
-            csvDocument.objects.filter(id=i).delete()
-        text = 'deleted'
-
-    else:
-        text = 'Nothing to see here'
-
-    return HttpResponse(text)
-
-
-def upload_csv(request):
-    from .forms import csvDocumentForm
-
-    # TODO (feat): take in more information about the game (location, conditions etc)
-    # use tags for conditions
-
-    # this permission check might be duplicative as it is also checked in the template
-    # TODO: this permission doesn't actually exist, but rob_development is a superuser so has_perm always returns True
-    # so is rats_development
-
-    if request.method == 'POST' and request.user.has_perm('db_output.can_upload_csv'):
-        form = csvDocumentForm(request.POST, request.FILES)
-        if form.is_valid():
-            form.save()
-            # TODO: check we're not saving/parsing the same game (datetime, tournament name)
-            return HttpResponseRedirect('test_output')  # show if something got added
-    else:
-        form = csvDocumentForm()
-        return render(request, 'db_output/upload_csv.html', {'form': form})
-
-
-def fetch_match(csv_name):
-    from .models import Player
-
-    for stored_player in Player.objects.all():
-        if csv_name in stored_player.csv_names or csv_name == stored_player.proper_name:
-            return stored_player
-
-    # only if no match found
-    return None
-
-
-def confirm_upload_details(request):
+    Category: Parse
+    :param request: django request object
+    :return: response object
+    """
     # from .models import Player
     from .forms import ValidationForm, VerifyConfirmForm
+    from .helpers import fetch_match
     logger = logging.getLogger(__name__)
 
     # FIXME: if you refresh you redo the GET part with no processing
@@ -161,7 +127,7 @@ def confirm_upload_details(request):
         name_validation_form = ValidationForm(match=match)
 
         request.session['conversion_dict'] = {}
-        return render(request, 'db_output/confirm_upload_details.html',
+        return render(request, 'db_output/parse_validate_player.html',
                       context={'form': name_validation_form, 'csv_name': csv_name, 'results': str(player_list)})
 
     # Branch 2 and 3:
@@ -193,7 +159,7 @@ def confirm_upload_details(request):
                 given_name = results['custom_name']
                 # when we create conversion dict from custom names we do not know their pks yet bc no object
                 # that is why conversion dict is empty on this page after a fully new team
-                # this will be written over with new pks in display_parse_results (after confirmation)
+                # this will be written over with new pks in parse_results (after confirmation)
 
                 # new_dict[csv_name] = 'newly added player, ID to be created on confirmation'
                 new_dict[csv_name] = given_name
@@ -217,8 +183,8 @@ def confirm_upload_details(request):
                 request.session['verify'] = True
                 verify_confirm = VerifyConfirmForm()
 
-                logger.debug('sending to verify_output')
-                return render(request, 'db_output/verify_output.html', context={'to_confirm': to_confirm,
+                logger.debug('sending to parse_verify')
+                return render(request, 'db_output/parse_verify.html', context={'to_confirm': to_confirm,
                                                                                 'verify_confirm': verify_confirm,
                                                                                 'extra_head': __name__})
 
@@ -228,7 +194,7 @@ def confirm_upload_details(request):
             match = fetch_match(csv_name)
             name_validation_form = ValidationForm(match=match)
 
-            return render(request, 'db_output/confirm_upload_details.html',
+            return render(request, 'db_output/parse_validate_player.html',
                           context={'form': name_validation_form,
                                    'csv_name': csv_name,
                                    'results': str(request.session['conversion_dict'])})
@@ -236,13 +202,20 @@ def confirm_upload_details(request):
         else:
             # reload the page with everything as it was if invalid input
             name_validation_form = ValidationForm(match=match)
-            return render(request, 'db_output/confirm_upload_details.html',
+            return render(request, 'db_output/parse_validate_player.html',
                           context={'form': name_validation_form,
                                    'csv_name': csv_name,
                                    'results': 'Data entered was not valid, please retry'})
 
 
-def verify_output(request):
+def parse_verify(request):
+    """
+    Handles display of parse output verification page
+
+    Category: Parse
+    :param request: django request object
+    :return: response object
+    """
     from .forms import VerifyConfirmForm
     logger = logging.getLogger(__name__)
 
@@ -256,11 +229,17 @@ def verify_output(request):
                 request.session['verify'] = verify_confirm.cleaned_data['verify']
 
             request.session['go_to_dpr'] = True
-            return HttpResponseRedirect('display_parse_results')
+            return HttpResponseRedirect('parse_results')
 
 
-def display_parse_results(request):
+def parse_results(request):
+    """
+    Handles display of parse results
 
+    Category: Parse
+    :param request: request
+    :return: response
+    """
     from .ua_parser import parse
     from . import models
 
@@ -306,10 +285,17 @@ def display_parse_results(request):
                            request.session['conversion_dict'], verify=request.session['verify'])
     # currently this just gives us a success indicating string
 
-    return render(request, 'db_output/show_output.html', context={'parsed_results': parsed_results})
+    return render(request, 'db_output/parse_select.html', context={'parsed_results': parsed_results})
 
 
-def present_stats(request):
+def analysis_select(request):
+    """
+    Handles display of analysis selector
+
+    Category: Analysis
+    :param request: request
+    :return: response
+    """
     from .forms import AnalysisForm
     from .analysis import get_all_analyses, null_analysis, second_null_analysis
 
@@ -327,7 +313,7 @@ def present_stats(request):
     if request.method == 'GET':
         aform = AnalysisForm(analysis_choices=widget_choices)
 
-        return HttpResponse(render(request, 'db_output/present_stats.html', {'selector': aform}))
+        return HttpResponse(render(request, 'db_output/analysis_select.html', {'selector': aform}))
 
     elif request.method == 'POST':
         aform = AnalysisForm(request.POST, analysis_choices=widget_choices)
@@ -342,10 +328,10 @@ def present_stats(request):
                 new_data = analysis_options[int(a_index)][0](game=game, team=team)
 
                 results.append(new_data)
-            return HttpResponse(render(request, 'db_output/present_stats.html', {'analysis': str(results)}))
+            return HttpResponse(render(request, 'db_output/analysis_select.html', {'analysis': str(results)}))
 
         else:
             logger.warning('form not valid')
             aform = AnalysisForm(analysis_choices=widget_choices)
-            return HttpResponse(render(request, 'db_output/present_stats.html', {'selector': aform}))
+            return HttpResponse(render(request, 'db_output/analysis_select.html', {'selector': aform}))
 

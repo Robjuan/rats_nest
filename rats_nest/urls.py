@@ -15,7 +15,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from db_output import views as v
+from db_output import simple_views as v
 
 
 # # rs @ 27/11

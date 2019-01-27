@@ -1,0 +1,14 @@
+{% extends 'db_output/base_bootstrap.html' %}
+{% if extra_head %} {{ extra_head }} {% endif %}
+
+{% block title %} Parse Results {% endblock %}
+
+{% block content %}
+
+    {% if parsed_results %}
+
+        {{ parsed_results }} <!-- display_parsed_results sends 'parsed_results' -->
+
+    {% endif %}
+
+{% endblock %}

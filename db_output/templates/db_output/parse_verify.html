@@ -2,12 +2,12 @@
 {% if extra_head %} {{ extra_head }} {% endif %}
 
 
-{% block title %} MVP - Verify {% endblock %}
+{% block title %} Parse Verify {% endblock %}
 
 
 {% block content %}
 
-    {% if to_confirm %} <!-- branch 2 of confirm_upload_details sends 'to_confirm' -->
+    {% if to_confirm %} <!-- branch 2 of parse_validate_player sends 'to_confirm' -->
 
         <h3> The below conversion dictionary was created based on your validation inputs.<br></h3>
         <h4>Confirm will save your inputs and take you to the results of the parser.<br>
@@ -21,7 +21,7 @@
             <button type="submit">Confirm</button>
         </form>
 
-        <form action="{% url test_output %}">
+        <form action="{% url parse_select %}">
             <button type="submit">Cancel</button>
         </form>
         <!-- TODO: ensure that session data is cleaned via this exit -->
@@ -41,4 +41,4 @@ therefore, need to know what form sent us to the page when we get in
 >>> do a little restructuring and documentation, make sure each view employs only a single form
 >>> have either a) a specific template for the view or b) document which template it uses
 >>> rename views + templates
->>> document mapping between them 
+>>> document mapping between them

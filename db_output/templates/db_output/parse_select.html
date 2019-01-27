@@ -1,11 +1,11 @@
 {% extends 'db_output/base_bootstrap.html' %}
 {% if extra_head %} {{ extra_head }} {% endif %}
 
-{% block title %} MVP - Output {% endblock %}
+{% block title %} Parse Select {% endblock %}
 
 {% block content %}
 
-    {% if form %} <!-- test_output sends 'form' -->
+    {% if form %} <!-- parse_select sends 'form' -->
 
         {% if perms.db_output.can_request_parse %} <!-- TODO: a fake permission, superusers only atm  -->
 
@@ -25,19 +25,5 @@
         {% endif %}
 
     {% endif %}
-
-    {% if teamvalidation %} <!-- [x] sends 'teamvalidation' -->
-
-        {{ teamvalidation }}
-
-    {% endif %}
-
-
-    {% if parsed_results %}
-
-        {{ parsed_results }} <!-- display_parsed_results sends 'parsed_results' -->
-
-    {% endif %}
-
 
 {% endblock %}

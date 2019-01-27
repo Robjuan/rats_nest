@@ -1,0 +1,25 @@
+CURRENTLY:
+
+Pages with very simple (or zero) logic are in simple_views.
+Pages with complex logic are in views, grouped into categories.
+Currently each view has it's own template which it uses to display itself.
+The template name matches the view function name.
+
+Parse is about taking in csv, saving to database
+Analysis is reading database doing maths
+
+
+TARGETS:
+
+Features:
+- robust player/team validation
+- combining/linking two UA games
+- analysis packages across multiple teams/seasons
+- control over who can view stats
+
+To be discussed:
+- user registration / end-user upload
+- pulling straight from UA using API
+- personal stats distinct from main database
+
+
