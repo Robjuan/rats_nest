@@ -20,8 +20,6 @@ HttpResponse is simplest, only for small responses
 Render allows use of template properly
 
 
-
-
 REMOTE ONLY ISSUES (usually storage/db related)
 after uploading a new csv, fetching works
 before that, no fetch works??

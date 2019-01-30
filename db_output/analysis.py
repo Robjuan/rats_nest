@@ -23,7 +23,7 @@ def null_analysis(*args, **kwargs):
     game = kwargs.pop('game')
     team = kwargs.pop('team')
 
-    # do cool shit
+    # TODO (andy): some dope shit
 
     return 'first null, team: ' + str(team)
 

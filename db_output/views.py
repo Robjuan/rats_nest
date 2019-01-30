@@ -1,7 +1,7 @@
 # views.py
 # contains the logic for presenting all non-trivial pages on the site
 
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import HttpResponse, HttpResponseRedirect
 from django.conf import settings
 import logging
@@ -28,9 +28,12 @@ def upload_csv(request):
     if request.method == 'POST' and request.user.has_perm('db_output.can_upload_csv'):
         form = csvDocumentForm(request.POST, request.FILES)
         if form.is_valid():
-            form.save()
+            model = form.save(commit=False)  # not commit means do everything except actual db work
+            model.parsed = False
+            model.save()
+
             # TODO: check we're not saving/parsing the same game (datetime, tournament name)
-            return HttpResponseRedirect('parse_select')  # show if something got added
+            return HttpResponseRedirect('db_output/parse_select')  # show if something got added
     else:
         form = csvDocumentForm()
         return render(request, 'db_output/upload_csv.html', {'form': form})
@@ -52,9 +55,9 @@ def parse_select(request):
 
     logger = logging.getLogger(__name__)
 
-    filelist = []
+    # TODO: clean session
 
-    # TODO (lp): streamline data input?
+    filelist = []
 
     # apparently dynamic choices should be done via foreignkey?
     # choices needs a list of 2-tuples, [value, humanreadable]
@@ -80,7 +83,7 @@ def parse_select(request):
             # TODO (lp) why are there blank names
             request.session['player_list'] = player_list
 
-            return HttpResponseRedirect('parse_validate_player')
+            return redirect('parse_validate_player')
     else:
         form = fileSelector(choices=filelist)
         return render(request, 'db_output/parse_select.html', {'form': form})
@@ -176,17 +179,9 @@ def parse_validate_player(request):
                 for k, v in temp_dict.items():
                     to_confirm.append((k, v))
 
-                # TODO (lp): show ALL data that will be saved to db in humanreadable format
-
-
-                # TODO: include "verify" checkbox - we'll need a view to process the post of verify?
-                request.session['verify'] = True
-                verify_confirm = VerifyConfirmForm()
-
                 logger.debug('sending to parse_verify')
-                return render(request, 'db_output/parse_verify.html', context={'to_confirm': to_confirm,
-                                                                                'verify_confirm': verify_confirm,
-                                                                                'extra_head': __name__})
+                request.session['to_confirm'] = to_confirm
+                return redirect('parse_verify')
 
             csv_name = player_list.pop()
             request.session['player_list'] = player_list
@@ -219,16 +214,22 @@ def parse_verify(request):
     from .forms import VerifyConfirmForm
     logger = logging.getLogger(__name__)
 
+    to_confirm = request.session['to_confirm']
+    # TODO (lp): show ALL data that will be saved to db in humanreadable format
+    # TODO: take in additional information about players
+
     if request.method == 'GET':
         logger.warning('arrived at verify output via GET')
+        verify_form = VerifyConfirmForm()
 
+        return render(request, 'db_output/parse_verify.html', context={'verification_needed': to_confirm,
+                                                                       'verify_form': verify_form})
     elif request.method == 'POST':
-        verify_confirm = VerifyConfirmForm(request.POST)
-        if verify_confirm.is_valid():
-            if 'verify' in verify_confirm.cleaned_data:
-                request.session['verify'] = verify_confirm.cleaned_data['verify']
+        verify_form = VerifyConfirmForm(request.POST)
+        if verify_form.is_valid():
+            if 'verify' in verify_form.cleaned_data:
+                request.session['verify'] = verify_form.cleaned_data['verify']
 
-            request.session['go_to_dpr'] = True
             return HttpResponseRedirect('parse_results')
 
 
@@ -243,8 +244,9 @@ def parse_results(request):
     from .ua_parser import parse
     from . import models
 
-    if 'go_to_dpr' not in request.session:
-        return HttpResponseRedirect('index')  # TODO (lp) is this insecure?
+    # TODO: control flow into parse_results because we do db work here
+    # if not request.referrer == 'parse_verify':
+    #     raise (some error that sends us home)
 
     all_players = []
     for player_pk in request.session['matched_to_update']:
@@ -259,6 +261,12 @@ def parse_results(request):
         temp_dict = request.session['conversion_dict']
         temp_dict[csv_name] = p.player_ID
         request.session['conversion_dict'] = temp_dict
+
+    temp_dict = request.session['conversion_dict']
+    temp_dict['Anonymous'] = -1
+    request.session['conversion_dict'] = temp_dict
+    # this means that in ua_parser it won't fail when we reach a blank name
+    # handle_check_player will see this do well with it
 
     # creating the player objects can happen here, and therefore creating the team object is ok
     # both should be persistent beyond the scope of a single csv, and thus parse call

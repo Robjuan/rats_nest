@@ -1,44 +1,37 @@
 {% extends 'db_output/base_bootstrap.html' %}
 {% if extra_head %} {{ extra_head }} {% endif %}
 
-
 {% block title %} Parse Verify {% endblock %}
-
 
 {% block content %}
 
-    {% if to_confirm %} <!-- branch 2 of parse_validate_player sends 'to_confirm' -->
+    {% if verification_needed %}
 
-        <h3> The below conversion dictionary was created based on your validation inputs.<br></h3>
-        <h4>Confirm will save your inputs and take you to the results of the parser.<br>
-        Cancel will return you to the file select page.</h4>
+        <h3> The following conversion dictionary was generated based on your inputs.</h3><p>
+        <h4>Please examine it as correct and verify that this information is correct and true.<p>
+            Do not verify test data.</p></h4><br>
 
-        {{ to_confirm }}
+        <table><b>Name from CSV, Player ID</b><br>
 
-        <form method="post">
-            {% csrf_token %}
-            {{ verify_confirm }}
-            <button type="submit">Confirm</button>
-        </form>
-
-        <form action="{% url parse_select %}">
-            <button type="submit">Cancel</button>
-        </form>
-        <!-- TODO: ensure that session data is cleaned via this exit -->
+        {% for player in verification_needed %}
+            <tr>{{ player }}<br></tr>
+        {% endfor %}
+        </table><br>
 
     {% endif %}
 
+    {% if verify_form %}
+        <form method="post">
+            {% csrf_token %}
+            {{ verify_form.as_p }}
+            <button type="submit">Confirm</button>
+        </form>
+    {% endif %}
+
+        <p>
+        <form action="{% url 'parse_select' %}">
+            <button type="submit">Cancel</button>
+        </form>
+
 {% endblock %}
 
-
-<!-- submit button takes us back to the same page with post data
-therefore, need to know what form sent us to the page when we get in
-- cannot redirect and take post data with us
->> post is for refreshing the page and pulling data from form
-
-- can save data in session and grab it in the next view
->> good idea to have individual view for each form usage
->>> do a little restructuring and documentation, make sure each view employs only a single form
->>> have either a) a specific template for the view or b) document which template it uses
->>> rename views + templates
->>> document mapping between them

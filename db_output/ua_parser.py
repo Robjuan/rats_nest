@@ -1,8 +1,8 @@
 # this is where the magic happens
 # this file will parse UA-generated csv files and save them to models
 
-# TODO: there's no checking at all to see if the file matches the structure we're expecting
-# it just crashes - we should log errors and quit? blame the user.
+# at what points do we want to raise an exception? when would it crash the app if it gets unexpected input?
+# TODO: can definitely check if there are one or multiple games in given file - check for different possible UA output
 
 import csv
 from . import models
@@ -10,8 +10,12 @@ import logging
 
 
 def get_player_names(file_obj_pk):
-    # shorter version that pulls out every player mentioned in the stats
-    # used for manual data validation
+    """
+    mini-parse, to get nothing but all the csv_names in a file
+
+    :param file_obj_pk: pk to csvdocument obj with file
+    :return: list of player names in file
+    """
 
     filename = str(models.csvDocument.objects.get(pk=file_obj_pk).file)
     csv_file = open(filename)
@@ -27,15 +31,28 @@ def get_player_names(file_obj_pk):
     return player_name_list
 
 
-# running parse() before uploading a new csv causes an error on the remote build, but not local
+def check_conversion_dict(conversion_dict, file_obj_pk):
+    """
+    Checks conversion_dict against player_names for consistency
 
-# select which file you'd like to parse
-# press go and it will parse and print whatever output
+    :param conversion_dict:
+    :param file_obj_pk: to feed get_player_names
+    :return: name if found to be not in conversion_dict, else True
+    """
+    import logging
+    logger = logging.getLogger(__name__)
 
-# should check to see if objects exist before creating (or overwrite?)
-# this currently doesn't check at all to see if anything exists
-# imo should check that right at the start and stop ?
-# how to identify?
+    player_names = get_player_names(file_obj_pk)
+    for name in player_names:
+        if not name:
+            logger.warning('blank name in check_conversion_dict')
+            continue
+        if name not in conversion_dict:
+            return name
+    return True
+
+
+# FIXME: running parse() before uploading a new csv causes an error on the remote build, but not local
 
 # ** One per game columns:
 # Date/Time
@@ -63,14 +80,30 @@ def get_player_names(file_obj_pk):
 
 
 def parse(file_obj_pk, team_obj_pk, conversion_dict, verify=True):
-    csv_obj = models.csvDocument.objects.get(pk=file_obj_pk)
-    filename = csv_obj.file.name
-    csv_file = open(filename)
-    csv_reader = csv.DictReader(csv_file, delimiter=',')
-    # DictReader means that each line is a dictionary, with name:value determined by column name:column value
+    """
+    The parse function. Central logic of converting UA csv to database objects.
 
-    conversion_dict['Anonymous'] = -1
-    # handle_check_player will then return None
+    :param file_obj_pk: pk of the file object to be parsed
+    :param team_obj_pk: pk of the team object this game is about
+    :param conversion_dict: dict in form {csv_name: pk} to convert raw data to pks for parse
+    :param verify: should this game be marked as verified on completion, defaults True
+    :return: TODO: have parse return summary of everything saved to db
+    """
+    logger = logging.getLogger(__name__)
+
+    try:
+        csv_obj = models.csvDocument.objects.get(pk=file_obj_pk)
+        filename = csv_obj.file.name
+        csv_file = open(filename)
+        csv_reader = csv.DictReader(csv_file, delimiter=',')
+        # DictReader means that each line is a dictionary, with name:value determined by column name:column value
+
+    except OSError as e:
+        logger.error(str(e))
+        return None
+
+    if not check_conversion_dict(conversion_dict, file_obj_pk):
+        return None
 
     # *** valid column names from ua csv are:
     # Date/Time,Tournamemnt,Opponent,Point Elapsed Seconds,Line,Our Score - End of Point,Their Score - End of Point,
@@ -94,11 +127,10 @@ def parse(file_obj_pk, team_obj_pk, conversion_dict, verify=True):
             this_game.tournament_name = line['Tournamemnt']  # UA csv has typo in column name "Tournamemnt"
             this_game.file_model = models.csvDocument.objects.get(pk=file_obj_pk)
             this_game.team = models.Team.objects.get(pk=team_obj_pk)
-            this_game.verified = verify
 
             this_game.save()
 
-            # TODO (feat): combine two sets of UA stats into one game
+            # TODO (feat): combine stats - link by fk first
             # how to set opposing game details and stuff
             # manually subsequently?
             # line['Opponent']
@@ -188,6 +220,8 @@ def parse(file_obj_pk, team_obj_pk, conversion_dict, verify=True):
 
         this_event.save()
 
+    this_game.verified = verify
+    this_game.save()
     csv_file.close()
     csv_obj.parsed = True
     csv_obj.save()

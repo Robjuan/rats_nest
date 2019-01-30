@@ -12,7 +12,7 @@ urlpatterns = [
     # Category: Parse
     path('parse_select', views.parse_select, name='parse_select'),
     path('parse_validate_player', views.parse_validate_player, name='parse_validate_player'),
-    # path('parse_verify', views.parse_verify, name='parse_verify'),
+    path('parse_verify', views.parse_verify, name='parse_verify'),
     path('parse_results', views.parse_results, name='parse_results'),
 
     # Category: Upload

@@ -1,10 +1,16 @@
 from django import forms
 from django_select2.forms import ModelSelect2Widget
-
+from django.core.validators import FileExtensionValidator
 from .models import csvDocument
 
 
 class csvDocumentForm(forms.ModelForm):
+    # def __init__(self, *args, **kwargs):
+    #     super().__init__(*args, **kwargs)
+    #     self.fields['file'].validators = [FileExtensionValidator('.csv')]
+    #     # django says to not rely on this because shit can be renamed
+    #     # fair cop TODO: upload controls
+
     class Meta:
         model = csvDocument
         fields = ('your_team_name', 'season', 'description', 'file')
@@ -82,7 +88,7 @@ class AnalysisForm(forms.Form):
         widget=ModelSelect2Widget(
             model=Game,
             search_fields=['tournament_name'],
-            dependent_fields={'team': 'team'},  # TODO: test dependency against multiple entries etc
+            dependent_fields={'team': 'team'},  # TODO: test form dependency against multiple entries
             max_results=500,
             attrs={'data-width': '75%'},
 
@@ -97,4 +103,5 @@ class AnalysisForm(forms.Form):
 
 
 class VerifyConfirmForm(forms.Form):
-    pass
+    verify = forms.BooleanField()
+

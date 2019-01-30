@@ -151,6 +151,8 @@ class Possession(models.Model):
 
 class Event(models.Model):
     event_ID = models.AutoField(primary_key=True)
+    # to find out the order of events in a possession, can sort by pk
+
     possession = models.ForeignKey(Possession,
                                    on_delete=models.CASCADE)
     players = models.ManyToManyField(Player,
