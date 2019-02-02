@@ -2,7 +2,6 @@
 # this file will parse UA-generated csv files and save them to models
 
 # at what points do we want to raise an exception? when would it crash the app if it gets unexpected input?
-# TODO: can definitely check if there are one or multiple games in given file - check for different possible UA output
 
 import csv
 from . import models
@@ -17,9 +16,8 @@ def get_player_names(file_obj_pk):
     :return: list of player names in file
     """
 
-    filename = str(models.csvDocument.objects.get(pk=file_obj_pk).file)
-    csv_file = open(filename)
-    csv_reader = csv.DictReader(csv_file, delimiter=',')
+    file = models.csvDocument.objects.get(pk=file_obj_pk).file
+    csv_reader = csv.DictReader([line.decode('utf-8') for line in file.readlines()], delimiter=',')
 
     player_name_list = []
     for line in csv_reader:
@@ -94,8 +92,8 @@ def parse(file_obj_pk, team_obj_pk, conversion_dict, verify=True):
     try:
         csv_obj = models.csvDocument.objects.get(pk=file_obj_pk)
         filename = csv_obj.file.name
-        csv_file = open(filename)
-        csv_reader = csv.DictReader(csv_file, delimiter=',')
+        csv_file = csv_obj.file
+        csv_reader = csv.DictReader([line.decode('utf-8') for line in csv_file.readlines()], delimiter=',')
         # DictReader means that each line is a dictionary, with name:value determined by column name:column value
 
     except OSError as e:
@@ -127,7 +125,7 @@ def parse(file_obj_pk, team_obj_pk, conversion_dict, verify=True):
             this_game.tournament_name = line['Tournamemnt']  # UA csv has typo in column name "Tournamemnt"
             this_game.file_model = models.csvDocument.objects.get(pk=file_obj_pk)
             this_game.team = models.Team.objects.get(pk=team_obj_pk)
-
+            this_game.verified = verify
             this_game.save()
 
             # TODO (feat): combine stats - link by fk first
@@ -220,7 +218,6 @@ def parse(file_obj_pk, team_obj_pk, conversion_dict, verify=True):
 
         this_event.save()
 
-    this_game.verified = verify
     this_game.save()
     csv_file.close()
     csv_obj.parsed = True

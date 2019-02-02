@@ -88,7 +88,7 @@ class AnalysisForm(forms.Form):
         widget=ModelSelect2Widget(
             model=Game,
             search_fields=['tournament_name'],
-            dependent_fields={'team': 'team'},  # TODO: test form dependency against multiple entries
+            dependent_fields={'team': 'team'},
             max_results=500,
             attrs={'data-width': '75%'},
 
@@ -103,5 +103,5 @@ class AnalysisForm(forms.Form):
 
 
 class VerifyConfirmForm(forms.Form):
-    verify = forms.BooleanField()
+    verify = forms.BooleanField(required=False)
 

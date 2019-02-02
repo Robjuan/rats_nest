@@ -10,11 +10,11 @@ class csvDocument(models.Model):
     uploaded_at = models.DateTimeField(auto_now_add=True)
     season = models.IntegerField()
 
-    parsed = models.BooleanField()
+    parsed = models.BooleanField(null=True)  # FIXME (Current): is false null?
 
     def __str__(self):
-        return 'csv from ' + str(self.your_team_name) + ', uploaded at: ' + str(self.uploaded_at)[:19]  # cut off secs
-
+        return 'csv: ' + str(self.your_team_name) + ', uploaded: ' + str(self.uploaded_at)[5:19] + ', filename: ' + \
+               str(self.file.name)
 
 # statistic storage
 

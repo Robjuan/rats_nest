@@ -146,6 +146,10 @@ STATICFILES_DIRS = ['staticfiles']
 
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
+# User-uploaded storage config
+
+MEDIA_ROOT = 'media'
+
 # Log configuration
 
 # https://www.webforefront.com/django/setupdjangologging.html

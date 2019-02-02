@@ -17,6 +17,8 @@ def upload_csv(request):
     :return: response object
     """
     from .forms import csvDocumentForm
+    from .models import csvDocument
+    from .helpers import breakdown_data_file
 
     # TODO (feat): take in more information about the game (location, conditions etc)
     # use tags for conditions
@@ -28,12 +30,20 @@ def upload_csv(request):
     if request.method == 'POST' and request.user.has_perm('db_output.can_upload_csv'):
         form = csvDocumentForm(request.POST, request.FILES)
         if form.is_valid():
-            model = form.save(commit=False)  # not commit means do everything except actual db work
-            model.parsed = False
-            model.save()
+            written_data = form.cleaned_data
+            file_list = breakdown_data_file(request.FILES['file'])
+            for content_file, filename, opponent, datetime in file_list:
+                this_description = written_data['description'] + '_' + str(opponent)
 
-            # TODO: check we're not saving/parsing the same game (datetime, tournament name)
-            return HttpResponseRedirect('db_output/parse_select')  # show if something got added
+                # TODO: check we're not saving/parsing the same game (datetime, tournament name)
+                this_model = csvDocument(your_team_name=written_data['your_team_name'],
+                                         season=written_data['season'],
+                                         description=this_description,
+                                         file=content_file,
+                                         parsed=False)
+                this_model.file.save(filename, content_file, save=True)  # calls models.save() immediately
+
+            return HttpResponseRedirect('parse_select')
     else:
         form = csvDocumentForm()
         return render(request, 'db_output/upload_csv.html', {'form': form})
@@ -63,8 +73,8 @@ def parse_select(request):
     # choices needs a list of 2-tuples, [value, humanreadable]
 
     if settings.DEBUG:
+        logger.warning('presenting parsed objects as parseable')
         for obj in csvDocument.objects.all():
-            logger.warning('presenting parsed objects as parseable')
             if obj.parsed:
                 filelist.append((obj.id, 'parsed: '+str(obj)))
             else:
@@ -76,7 +86,6 @@ def parse_select(request):
     if request.method == 'POST':
         form = fileSelector(request.POST, choices=filelist)
         if form.is_valid():
-
             fileobj_id = form.cleaned_data['filechoice']
             request.session['file_obj_pk'] = fileobj_id
             player_list = [x for x in get_player_names(fileobj_id) if not_blank_or_anonymous(x)]
@@ -229,7 +238,7 @@ def parse_verify(request):
         if verify_form.is_valid():
             if 'verify' in verify_form.cleaned_data:
                 request.session['verify'] = verify_form.cleaned_data['verify']
-
+                logger.info('verify in cleaned data as: '+str(verify_form.cleaned_data['verify']))
             return HttpResponseRedirect('parse_results')
 
 

@@ -1,15 +1,13 @@
 from django.test import TestCase
 
 
-# TODO (current): build tests
-
 def load_test_data():
     from .models import csvDocument
     import os
     from django.conf import settings
     from django.core.files.uploadedfile import SimpleUploadedFile
 
-    f = open(os.path.join(settings.PROJECT_ROOT, 'Rats_Nest_Sample_Data.csv'), 'rb')
+    f = open(os.path.join(settings.PROJECT_ROOT,'media', 'Rats_Nest_Sample_Data.csv'), 'rb')
     file = SimpleUploadedFile('test_Data.csv',f.read())
     f.close()
 
@@ -21,7 +19,6 @@ def load_test_data():
 
 
 class UaParserTests(TestCase):
-
     def test_conversion_dict_check_with_valid(self):
         from .ua_parser import check_conversion_dict
 
@@ -34,3 +31,12 @@ class UaParserTests(TestCase):
         test_pk = load_test_data().pk
 
         self.assertIs(check_conversion_dict(test_dict, test_pk), True)
+
+
+class HelpersTests(TestCase):
+    def test_not_blank_or_anon(self):
+        from .helpers import not_blank_or_anonymous
+        self.assertIs(not_blank_or_anonymous(''), False)
+        self.assertIs(not_blank_or_anonymous('asdf'), True)
+        self.assertIs(not_blank_or_anonymous('Anonymous'), False)
+        self.assertIs(not_blank_or_anonymous(None), False)

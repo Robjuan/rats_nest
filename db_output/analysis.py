@@ -8,6 +8,9 @@ def get_all_analyses():
     for name, obj in inspect.getmembers(sys.modules[__name__], inspect.isfunction):
         if name == '__builtins__' or name == 'get_all_analyses':
             continue
+
+        # can also do sorting here to only show complete packages and not helpers
+
         else:
             full_list.append((obj, name))
 
@@ -15,15 +18,29 @@ def get_all_analyses():
     # will return {name:func} for all top-level members (funcs, classes etc)
     # if we keep this file clear and only build analysis functions in it, should be sweet
 
-# all analysis functions will be handed game_id and team_id as kwargs
-# these are the actual objects being passed in not pks
 
+# all top-level analysis functions will be handed game_id and team_id as kwargs
+# these are the actual objects being passed in, not pks
+# 'game' and 'team' are the kwargs
+
+# TODO (current) follow these steps for analysis creation
+# step 1: build out basic descriptive stats that we can use to build more complex stats
+# step 2: combine those to get output
+# step 3: build an output framework (table?)
+
+def descriptive_team_analyis(*args, **kwargs):
+    game = kwargs.pop('game')
+    team = kwargs.pop('team')
+
+    from .models import Team, Player
+
+    # team_players =
+
+    pass
 
 def null_analysis(*args, **kwargs):
     game = kwargs.pop('game')
     team = kwargs.pop('team')
-
-    # TODO (andy): some dope shit
 
     return 'first null, team: ' + str(team)
 

@@ -13,3 +13,5 @@ admin.site.register(Possession)
 admin.site.register(Event)
 
 admin.site.register(csvDocument)
+
+# TODO (lp): better many-to-many displays for players onfield
