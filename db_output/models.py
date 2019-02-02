@@ -175,6 +175,7 @@ class Event(models.Model):
                                  related_name='defender')
     # don't allow deletion of players if they have events attached to them
     event_type = models.CharField(max_length=30)
+    action = models.CharField(max_length=30)
     elapsedtime = models.IntegerField()
 
     def __str__(self):

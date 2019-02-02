@@ -3,6 +3,18 @@
 
 # all should probably take in game
 
+# https://docs.djangoproject.com/en/2.1/topics/db/queries/
+
 
 def completions_by_player(game, player):
-    pass
+    from .models import Event
+
+    throws = Event.objects.filter(passer=player)
+    throwaways = Event.objects.filter(passer=player, action='Throwaway')
+
+    if throws.count():
+        completion = (throwaways.count() / throws.count())*100
+    else:
+        completion = None
+
+    return completion

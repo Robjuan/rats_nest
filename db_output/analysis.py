@@ -32,11 +32,15 @@ def descriptive_team_analyis(*args, **kwargs):
     game = kwargs.pop('game')
     team = kwargs.pop('team')
 
-    from .models import Team, Player
+    from .analysis_helpers import completions_by_player
 
-    # team_players =
+    team_players = team.players.all()  # TODO (current) this isn't returning all relevant players?
 
-    pass
+    completion_list = []
+    for player in team_players:
+        completion_list.append((player.proper_name,completions_by_player(game,player)))
+
+    return completion_list
 
 def null_analysis(*args, **kwargs):
     game = kwargs.pop('game')
