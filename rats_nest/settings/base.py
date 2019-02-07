@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'django_select2',
+    'mptt',
 
     'db_output'
 ]

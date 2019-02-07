@@ -1,5 +1,5 @@
 from django import forms
-from django_select2.forms import ModelSelect2Widget
+from django_select2.forms import ModelSelect2MultipleWidget, ModelSelect2Widget
 from django.core.validators import FileExtensionValidator
 from .models import csvDocument
 
@@ -82,10 +82,10 @@ class AnalysisForm(forms.Form):
         )
     )
 
-    game = forms.ModelChoiceField(
+    games = forms.ModelMultipleChoiceField(
         queryset=Game.objects.all(),
-        label="Game",
-        widget=ModelSelect2Widget(
+        label="Game(s)",
+        widget=ModelSelect2MultipleWidget(
             model=Game,
             search_fields=['tournament_name'],
             dependent_fields={'team': 'team'},

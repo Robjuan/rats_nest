@@ -6,7 +6,7 @@ Additionally, the database structure will allow us to more readily write advance
 
 Heroku is our server/backend, Django is the framework, PostgreSQL is our database.
 PostgreSQL version must be 11.1+
-
+(recommend BigSQL on mac)
 
 
 

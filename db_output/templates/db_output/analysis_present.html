@@ -9,11 +9,29 @@
 
 {% block content %}
 
-    {% if analysis %}
-
-        {{ analysis }}
-
+    {% if display_table %}
+        {% for table in display_table %}
+        <table>
+            {% for row in table %}
+            <tr>
+                {% for col in row %}
+                    {% if forloop.parentloop.first %}
+                        <th> {{ col }}</th> <!-- first row in column is treated as header row -->
+                    {% else %}
+                        <td> {{ col }}</td>
+                    {% endif %}
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </table>
+        {% endfor %}
     {% endif %}
 
+
+    {% if display_list %}
+        {% for item in display_list %}
+            {{ item }} <br>
+        {% endfor %}
+    {% endif %}
 
 {% endblock %}

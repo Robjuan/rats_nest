@@ -1,7 +1,7 @@
 from django.test import TestCase
 
 
-def load_test_data():
+def load_sample_test_data():
     from .models import csvDocument
     import os
     from django.conf import settings
@@ -28,7 +28,7 @@ class UaParserTests(TestCase):
             test_dict[name] = x
         test_dict['Anonymous'] = -1
 
-        test_pk = load_test_data().pk
+        test_pk = load_sample_test_data().pk
 
         self.assertIs(check_conversion_dict(test_dict, test_pk), True)
 
@@ -40,3 +40,7 @@ class HelpersTests(TestCase):
         self.assertIs(not_blank_or_anonymous('asdf'), True)
         self.assertIs(not_blank_or_anonymous('Anonymous'), False)
         self.assertIs(not_blank_or_anonymous(None), False)
+
+class UploadTests(TestCase):
+    def test_colony_thunder_player_association(self):
+        pass

@@ -6,6 +6,11 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.conf import settings
 import logging
 
+# TODO (lp) refactor the logic out of views into it's own file ('view_logic.py')
+# each view should then be only dealing with form creation / rendering / data getting etc
+# pass what it gets from the form into a couple of functions, get info
+# then test!!!
+
 
 def upload_csv(request):
     """
@@ -113,7 +118,7 @@ def parse_validate_player(request):
 
     # FIXME: if you refresh you redo the GET part with no processing
 
-    # TODO: replace radio with select2 search by type modelForm
+    # TODO (soon): replace radio with select2 search by type modelForm
 
     # this view should have three branches
     # 1 - GET
@@ -253,6 +258,8 @@ def parse_results(request):
     from .ua_parser import parse
     from . import models
 
+    # TODO (testing) break out logic into more easily testable funcs
+
     # TODO: control flow into parse_results because we do db work here
     # if not request.referrer == 'parse_verify':
     #     raise (some error that sends us home)
@@ -285,6 +292,8 @@ def parse_results(request):
     fileobj = models.csvDocument.objects.get(pk=request.session['file_obj_pk'])
     team_name = fileobj.your_team_name
 
+    # confirm which players were present in colony v thunder, check against analysis results
+
     if models.Team.objects.filter(team_name=team_name).exists():
         team_obj_pk = models.Team.objects.get(team_name=team_name).team_ID  # TODO: handle multiple team matches
     else:
@@ -316,6 +325,8 @@ def analysis_select(request):
     from .forms import AnalysisForm
     from .analysis import get_all_analyses, null_analysis, second_null_analysis
 
+    # TODO (feat): select all games by tournament
+
     logger = logging.getLogger(__name__)
 
     # django forms don't like it when we pass functions as the value in (value, name) tuple of analysis_choices
@@ -336,16 +347,21 @@ def analysis_select(request):
         aform = AnalysisForm(request.POST, analysis_choices=widget_choices)
         if aform.is_valid():
             func_indices = aform.cleaned_data['analysischoice']
-            game = aform.cleaned_data['game']
+            games = aform.cleaned_data['games']
             team = aform.cleaned_data['team']
 
-            results = []
+            display_list = []
+            display_table = []
             for a_index in func_indices:
 
-                new_data = analysis_options[int(a_index)][0](game=game, team=team)
+                new_data, display_format = analysis_options[int(a_index)][0](games=games, team=team)
+                if display_format == 'table':
+                    display_table.append(new_data)
+                else:
+                    display_list.append(new_data)
 
-                results.append(new_data)
-            return HttpResponse(render(request, 'db_output/analysis_select.html', {'analysis': str(results)}))
+            return HttpResponse(render(request, 'db_output/analysis_present.html', {'display_list': display_list,
+                                                                                    'display_table': display_table}))
 
         else:
             logger.warning('form not valid')

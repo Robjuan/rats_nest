@@ -48,7 +48,7 @@ class Player(models.Model):
 class Team(models.Model):
     team_ID = models.AutoField(primary_key=True)
     players = models.ManyToManyField(Player)
-    # ManyToMany doesn't take on_delete??
+    # ManyToMany doesn't take on_delete
 
     # non-key
     team_name = models.CharField(max_length=30)
@@ -71,6 +71,7 @@ class Game(models.Model):
     # if we only know the name
 
     # SET_NULL means that if you delete the referenced team, this just goes to null
+    # TODO (soon): get opposing team info going so we can show you who the game is against
     opposing_team = models.ForeignKey(Team,
                                       on_delete=models.SET_NULL,
                                       blank=True,
