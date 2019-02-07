@@ -16,3 +16,6 @@ env/
 
 # raw stats
 *.csv
+
+# OS files
+.DS_Store

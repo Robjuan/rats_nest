@@ -32,6 +32,19 @@ class UaParserTests(TestCase):
 
         self.assertIs(check_conversion_dict(test_dict, test_pk), True)
 
+    def test_conversion_dict_check_with_invalid(self):
+        from .ua_parser import check_conversion_dict
+
+        test_dict = {}
+        for x in range(1, 30):
+            name = 'invalid'
+            test_dict[name] = x
+        test_dict['Anonymous'] = -1
+
+        test_pk = load_sample_test_data().pk
+
+        self.assertIs(check_conversion_dict(test_dict, test_pk), False)
+
 
 class HelpersTests(TestCase):
     def test_not_blank_or_anon(self):
@@ -41,6 +54,3 @@ class HelpersTests(TestCase):
         self.assertIs(not_blank_or_anonymous('Anonymous'), False)
         self.assertIs(not_blank_or_anonymous(None), False)
 
-class UploadTests(TestCase):
-    def test_colony_thunder_player_association(self):
-        pass
