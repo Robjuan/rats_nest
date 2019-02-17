@@ -4,7 +4,8 @@ See TODO / FIXME in code. Pycharm will sort these in the bottom left.
 * Product labelled test data
 ** create unit tests
 
-
+#rob local psql installed in:
+rob/PostgreSQL/pg11/bin/psql
 
 Overarching design concerns/thoughts:
 
