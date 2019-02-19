@@ -44,7 +44,7 @@ def descriptive_offence_team_analysis(*args, **kwargs):
     team = kwargs.pop('team')
     logger = logging.getLogger(__name__)
 
-    from .analysis_helpers import completion_pct_by_player, goals_by_player, points_played_by_player
+    from .analysis_descriptive import completion_pct_by_player, goals_by_player, points_played_by_player
 
     decimal_places = 2
 
@@ -75,7 +75,7 @@ def descriptive_offence_team_analysis(*args, **kwargs):
     return stat_list, 'table'
 
 
-def analytic_possession_analysis(*args, **kwargs):
+def placeholder_analytic_possession_analysis(*args, **kwargs):
     """
     To calculate efficiency and effectiveness per-possession for a team across given games
 
