@@ -1,4 +1,5 @@
 from django.db import models
+from .managers import PointQuerySet, PossessionQuerySet, EventQuerySet
 
 
 # document upload - not for stats analysis
@@ -10,14 +11,14 @@ class csvDocument(models.Model):
     uploaded_at = models.DateTimeField(auto_now_add=True)
     season = models.IntegerField()
 
-    parsed = models.BooleanField(null=True)  # FIXME (Current): is false null?
+    parsed = models.BooleanField(null=True)
 
     def __str__(self):
         return 'csv: ' + str(self.your_team_name) + ', uploaded: ' + str(self.uploaded_at)[5:19] + ', filename: ' + \
                str(self.file.name)
 
-# statistic storage
 
+# statistic storage
 
 class Player(models.Model):
     player_ID = models.AutoField(primary_key=True)
@@ -44,6 +45,8 @@ class Player(models.Model):
     def __str__(self):
         return 'Player - [id:' + str(self.player_ID) + '] ' + str(self.proper_name)
 
+
+# non-hierarchical (Pull at end of file)
 
 class Team(models.Model):
     team_ID = models.AutoField(primary_key=True)
@@ -105,6 +108,8 @@ class Game(models.Model):
         return 'Game - [id:' + str(self.game_ID) + '] ' + str(self.tournament_name) + ' @ ' + str(self.datetime)[:19]
 
 
+# hierarchical
+
 class Point(models.Model):
     point_ID = models.AutoField(primary_key=True)
     # CASCADE means that if the game is deleted, all the relevant points will be deleted too
@@ -118,33 +123,21 @@ class Point(models.Model):
     theirscore_EOP = models.IntegerField()
     halfatend = models.BooleanField(default=False)
 
+    # manager
+    objects = PointQuerySet.as_manager()
+
     def __str__(self):
         return 'Point - [id:' + str(self.point_ID) + '] game:' + str(self.game) + \
                ',[us|them]: [' + str(self.ourscore_EOP) + '|' + str(self.theirscore_EOP) + ']'
 
 
-class Pull(models.Model):
-    pull_ID = models.AutoField(primary_key=True)
-    # PROTECT will error if the player is deleted when pulls exist
-    player = models.ForeignKey(Player,
-                               on_delete=models.PROTECT)
-    point = models.ForeignKey(Point,
-                              on_delete=models.CASCADE)
-
-    # non-key
-    hangtime = models.DecimalField(null=True,
-                                   decimal_places=2,
-                                   max_digits=4)
-
-    def __str__(self):
-        return 'Pull - [id:' + str(self.pull_ID) + '] player:' + str(self.player)
-
-
 class Possession(models.Model):
     possession_ID = models.AutoField(primary_key=True)
     point = models.ForeignKey(Point, on_delete=models.CASCADE)
-
     # if the point is deleted, delete relevant possessions
+
+    # manager
+    objects = PossessionQuerySet.as_manager()
 
     def __str__(self):
         return 'Possession - [id:' + str(self.possession_ID) + ']'
@@ -179,5 +172,25 @@ class Event(models.Model):
     action = models.CharField(max_length=30)
     elapsedtime = models.IntegerField()
 
+    # manager
+    objects = EventQuerySet.as_manager()
+
     def __str__(self):
         return 'Event - [id:' + str(self.event_ID) + ']'
+
+
+class Pull(models.Model):
+    pull_ID = models.AutoField(primary_key=True)
+    # PROTECT will error if the player is deleted when pulls exist
+    player = models.ForeignKey(Player,
+                               on_delete=models.PROTECT)
+    point = models.ForeignKey(Point,
+                              on_delete=models.CASCADE)
+
+    # non-key
+    hangtime = models.DecimalField(null=True,
+                                   decimal_places=2,
+                                   max_digits=4)
+
+    def __str__(self):
+        return 'Pull - [id:' + str(self.pull_ID) + '] player:' + str(self.player)
