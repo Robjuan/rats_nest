@@ -3,6 +3,8 @@
 
 # https://docs.djangoproject.com/en/2.1/topics/db/queries/
 
+import logging
+
 
 def get_events_by_game(game):
     from .models import Point, Possession, Event
@@ -22,21 +24,3 @@ def get_events_by_game(game):
     all_events = Event.objects.filter(pk__in=all_pks)
 
     return all_events
-
-
-def get_players_by_point(point):
-    from .models import Possession, Event, Player
-
-    point_players_ids = []
-
-    possessions = Possession.objects.filter(point=point)
-    for possession in possessions:
-        events = Event.objects.filter(possession=possession)
-        for event in events:
-            for player in event.players:
-                if player.player_ID not in point_players_ids:
-                    point_players_ids.append(player.player_ID)
-
-    point_players = Player.objects.filter(pk__in=point_players_ids)
-
-    return point_players

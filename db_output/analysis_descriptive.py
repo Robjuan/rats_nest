@@ -1,6 +1,8 @@
 # analysis_descriptive.py
 # differs from analyis_helpers in that these return numbers/stats
 
+from .analysis_helpers import *
+
 
 def completion_pct_by_player(games, player, return_count=False, decimal_places=2):
     """
@@ -58,8 +60,7 @@ def points_played_by_player(games, player):
     for game in games:
         this_game_points = Point.objects.filter(game=game)
         for point in this_game_points:
-            point_players = get_players_by_point(point)
-            if player in point_players:
+            if player in point.players.all():
                 total_points += 1
 
     return total_points

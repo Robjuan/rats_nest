@@ -63,7 +63,6 @@ def descriptive_offence_team_analysis(*args, **kwargs):
     for stat_row in stat_list:
         if isinstance(stat_row[1], str):  # skip header row
             continue
-        print(stat_row)
         cum_goals += stat_row[1]
         cum_throws += stat_row[3]
         cum_turns += (stat_row[2]/100)*stat_row[3]

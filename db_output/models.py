@@ -116,6 +116,9 @@ class Point(models.Model):
     game = models.ForeignKey(Game,
                              models.CASCADE)
 
+    players = models.ManyToManyField(Player,
+                                     related_name='players_on_field')
+
     # non-key
     point_elapsed_seconds = models.IntegerField()
     startingfence = models.CharField(max_length=30)  # not 100% settled on this
@@ -149,8 +152,7 @@ class Event(models.Model):
 
     possession = models.ForeignKey(Possession,
                                    on_delete=models.CASCADE)
-    players = models.ManyToManyField(Player,
-                                     related_name='players_onfield')
+
     # if the possession is deleted, delete relevant events
     passer = models.ForeignKey(Player,
                                on_delete=models.PROTECT,
