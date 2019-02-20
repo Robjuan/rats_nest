@@ -105,19 +105,3 @@ def placeholder_analytic_possession_analysis(*args, **kwargs):
         pass
 
     return 'first null, team: ' + str(team), 'list'
-
-
-def null_analysis(*args, **kwargs):
-    games = kwargs.pop('games')
-    team = kwargs.pop('team')
-
-    return 'first null, team: ' + str(team), 'list'
-
-
-def second_null_analysis(*args, **kwargs):
-    games = kwargs.pop('games')
-    team = kwargs.pop('team')
-
-    # do even cooler shit
-
-    return 'second null, game: ' + str(games), 'list'

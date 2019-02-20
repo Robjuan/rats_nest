@@ -9,14 +9,14 @@
 
 {% block content %}
 
-    {% if display_table %}
+    {% if display_table %}  <!-- TODO: sortable tables -->
         {% for table in display_table %}
-        <table>
+        <table class="table">
             {% for row in table %}
             <tr>
                 {% for col in row %}
                     {% if forloop.parentloop.first %}
-                        <th> {{ col }}</th> <!-- first row in column is treated as header row -->
+                        <th scope="col"> {{ col }}</th> <!-- first row in column is treated as header row -->
                     {% else %}
                         <td> {{ col }}</td>
                     {% endif %}
