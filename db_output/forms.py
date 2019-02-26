@@ -1,7 +1,7 @@
 from django import forms
 from django_select2.forms import ModelSelect2MultipleWidget, ModelSelect2Widget
 from django.core.validators import FileExtensionValidator
-from .models import csvDocument
+from .models import csvDocument, Team
 
 
 class csvDocumentForm(forms.ModelForm):
@@ -29,6 +29,12 @@ class fileSelector(forms.Form):
 
         if selected:
             self.initial = selected
+
+
+class TeamValidationForm(forms.ModelForm):
+    class Meta:
+        model = Team
+        exclude = ('team_id', 'players')
 
 
 class ValidationForm(forms.Form):

@@ -1,0 +1,40 @@
+{% extends 'db_output/base_bootstrap.html' %}
+{% if extra_head %} {{ extra_head }} {% endif %}
+
+
+{% block title %} Parse Validate Team {% endblock %}
+
+{% block content %}
+
+<h4> The team name provided during upload was: {{ team_name }}<br> </h4>
+Below are any matches found in our database. If correct, please confirm the match and add any extra information known. <br>
+If incorrect, please enter new team information in the provided space at the bottom. <br>
+<br>
+Please do not create a new team each season. The season provided at upload was: {{ season }}
+
+<p></p>
+
+<form method='post' enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ formset.management_form }}
+    {% for form in formset %}
+        <!-- TODO (lp) formatting looks bad when required field not given -->
+
+            <input type="radio" id="id_selector_{{ forloop.counter }}" name="selector" value="{{ forloop.counter }}">
+    <label for="id_selector_{{ forloop.counter }}"><b>Use this Team</b></label>
+
+        <p>{{ form }}</p>
+
+    {% endfor %}
+
+    <button type="submit">Confirm</button>
+</form>
+
+<!-- printed results below -->
+
+{% if results %}
+<p>
+{{ results }}
+{% endif %}
+
+{% endblock %}

@@ -36,7 +36,7 @@ def completion_pct_by_player(games, player, return_count=False, decimal_places=2
     else:
         completion = 0
 
-    if return_count:  # TODO: is this pythonic
+    if return_count:  # is this pythonic
         return completion, total_throws
     else:
         return completion

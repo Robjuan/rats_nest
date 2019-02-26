@@ -68,6 +68,7 @@ def descriptive_offence_team_analysis(*args, **kwargs):
         cum_turns += (stat_row[2]/100)*stat_row[3]
 
     cum_pct = round((cum_turns / cum_throws) * 100, decimal_places)
+    # this will throw an exception if your team did not have a single throw
 
     stat_list.append(('Cumulatively', cum_goals, cum_pct, cum_throws, 'n/a'))
 

@@ -7,10 +7,13 @@ from . import views, simple_views
 # view is the view to call, httprequest as first arg rest as kwargs
 # kwargs are optional
 
+# TODO (soon): control manual access by URL
+
 
 urlpatterns = [
     # Category: Parse
     path('parse_select', views.parse_select, name='parse_select'),
+    path('parse_validate_team', views.parse_validate_team, name='parse_validate_team'),
     path('parse_validate_player', views.parse_validate_player, name='parse_validate_player'),
     path('parse_verify', views.parse_verify, name='parse_verify'),
     path('parse_results', views.parse_results, name='parse_results'),

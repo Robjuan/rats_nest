@@ -7,16 +7,20 @@
 
     {% if verification_needed %}
 
-        <h3> The following conversion dictionary was generated based on your inputs.</h3><p>
-        <h4>Please examine it as correct and verify that this information is correct and true.<p>
-            Do not verify test data.</p></h4><br>
+        <h3> The following conversion data was generated based on your inputs.</h3><p></p>
+        <h4>Please examine it as correct and verify that this information is correct and true.<p></p>
+        Do not verify test data.<p></p></h4><br>
 
-        <table><b>Name from CSV, Player ID</b><br>
-
-        {% for player in verification_needed %}
-            <tr>{{ player }}<br></tr>
-        {% endfor %}
-        </table><br>
+        <table class="table">
+            <tr><th scope="col">Name from CSV</th><th scope="col">Player ID</th><th scope="col">Proper Name</th></tr>
+            {% for row in verification_needed %}
+            <tr>
+                {% for col in row %}
+                    <td> {{ col }}</td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </table>
 
     {% endif %}
 

@@ -70,7 +70,7 @@ def parse_select(request):
 
     logger = logging.getLogger(__name__)
 
-    # TODO: clean session
+    # TODO: clean session?
 
     filelist = []
 
@@ -97,10 +97,49 @@ def parse_select(request):
             # TODO (lp) why are there blank names
             request.session['player_list'] = player_list
 
-            return redirect('parse_validate_player')
+            return redirect('parse_validate_team')
     else:
         form = fileSelector(choices=filelist)
         return render(request, 'db_output/parse_select.html', {'form': form})
+
+
+def parse_validate_team(request):
+    """
+    Handles display of team validation page
+
+    :param request:
+    :return: response
+    """
+    from django.forms import modelformset_factory
+    from .models import csvDocument, Team
+    from .forms import TeamValidationForm
+
+    logger = logging.getLogger(__name__)
+
+    fileobj_id = request.session['file_obj_pk']
+    fileobj = csvDocument.objects.get(pk=fileobj_id)
+    uploaded_team_name = fileobj.your_team_name
+    uploaded_season = fileobj.season
+
+    TeamFormSet = modelformset_factory(Team, form=TeamValidationForm)
+    # initial_data = [{'your_team_name': 'New Team Name', 'origin': 'Place Of Origin', 'division': 'M, W, X'}]
+
+    if request.method == 'POST':
+        formset = TeamFormSet(request.POST, queryset=Team.objects.filter(team_name__contains=uploaded_team_name))
+        if formset.is_valid():  # will only return valid if all forms are valid
+            selected_index = int(request.POST['selector'])  # 1-based form index (1 being first provided match)
+            for index, form in enumerate(formset.forms, 1):
+                if index == selected_index:
+                    saved_team = form.save()
+                    request.session['team_obj_pk'] = saved_team.team_ID
+
+            return redirect('parse_validate_player')
+
+    else:  # GET
+        formset = TeamFormSet(queryset=Team.objects.filter(team_name__contains=uploaded_team_name))
+
+    return render(request, 'db_output/parse_validate_team.html', {'formset': formset, 'team_name': uploaded_team_name,
+                                                                  'season': uploaded_season})
 
 
 def parse_validate_player(request):
@@ -111,14 +150,16 @@ def parse_validate_player(request):
     :param request: django request object
     :return: response object
     """
-    # from .models import Player
+    from .models import Player
     from .forms import ValidationForm, VerifyConfirmForm
     from .helpers import fetch_match
     logger = logging.getLogger(__name__)
 
     # FIXME: if you refresh you redo the GET part with no processing
 
-    # TODO (soon): replace radio with select2 search by type modelForm
+    # TODO (now): replace radio with select2 search by type modelForm
+    # TODO: take in additional information about players
+
 
     # this view should have three branches
     # 1 - GET
@@ -191,7 +232,10 @@ def parse_validate_player(request):
                 to_confirm = []
                 temp_dict = request.session['conversion_dict']
                 for k, v in temp_dict.items():
-                    to_confirm.append((k, v))
+                    if isinstance(v, int):  # is not a new player
+                        to_confirm.append((k, v, Player.objects.get(pk=v).proper_name))
+                    else:  # new player, v = given_name
+                        to_confirm.append((k, 'n/a', v))
 
                 logger.debug('sending to parse_verify')
                 request.session['to_confirm'] = to_confirm
@@ -229,8 +273,6 @@ def parse_verify(request):
     logger = logging.getLogger(__name__)
 
     to_confirm = request.session['to_confirm']
-    # TODO (lp): show ALL data that will be saved to db in humanreadable format
-    # TODO: take in additional information about players
 
     if request.method == 'GET':
         logger.warning('arrived at verify output via GET')
@@ -260,7 +302,6 @@ def parse_results(request):
 
     # TODO (testing) break out logic into more easily testable funcs
 
-    # TODO: control flow into parse_results because we do db work here
     # if not request.referrer == 'parse_verify':
     #     raise (some error that sends us home)
 
@@ -287,25 +328,15 @@ def parse_results(request):
     # creating the player objects can happen here, and therefore creating the team object is ok
     # both should be persistent beyond the scope of a single csv, and thus parse call
 
-    # TODO: manually validate team names like player names
-
-    fileobj = models.csvDocument.objects.get(pk=request.session['file_obj_pk'])
-    team_name = fileobj.your_team_name
-
-    # confirm which players were present in colony v thunder, check against analysis results
-
-    if models.Team.objects.filter(team_name=team_name).exists():
-        team_obj_pk = models.Team.objects.get(team_name=team_name).team_ID  # TODO: handle multiple team matches
-    else:
-        new_team = models.Team(team_name=team_name)
-        new_team.save()
-        team_obj_pk = new_team.team_ID
+    team_obj_pk = request.session['team_obj_pk']
 
     this_team = models.Team.objects.get(pk=team_obj_pk)
     for player in all_players:
         # establish m2m relationship
         this_team.players.add(player.player_ID)
     this_team.save()
+
+    # TODO (lp): show ALL data that will be saved to db in humanreadable format
 
     parsed_results = parse(request.session['file_obj_pk'], team_obj_pk,
                            request.session['conversion_dict'], verify=request.session['verify'])
@@ -323,7 +354,7 @@ def analysis_select(request):
     :return: response
     """
     from .forms import AnalysisForm
-    from .analysis import get_all_analyses, null_analysis, second_null_analysis
+    from .analysis import get_all_analyses
 
     # TODO (feat): select all games by tournament
 

@@ -251,6 +251,7 @@ def handle_new_point(game_ID, line, conversion_dict, halfatend=False):
     this_point.ourscore_EOP = line['Our Score - End of Point']
     this_point.theirscore_EOP = line['Their Score - End of Point']
     this_point.halfatend = halfatend
+    this_point.save()
 
     # store players
     player_col_list = []
@@ -262,7 +263,6 @@ def handle_new_point(game_ID, line, conversion_dict, halfatend=False):
         if line[player_col]:
             player = handle_check_player(conversion_dict[line[player_col]])
             this_point.players.add(player)  # this is building the manytomany
-            this_point.save()
 
     this_point.save()
     return this_point
