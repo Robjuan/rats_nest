@@ -1,15 +1,10 @@
 from django import forms
 from django_select2.forms import ModelSelect2MultipleWidget, ModelSelect2Widget
-from django.core.validators import FileExtensionValidator
-from .models import csvDocument, Team
+from .models import csvDocument, Team, Player, Game
 
 
 class csvDocumentForm(forms.ModelForm):
-    # def __init__(self, *args, **kwargs):
-    #     super().__init__(*args, **kwargs)
-    #     self.fields['file'].validators = [FileExtensionValidator('.csv')]
-    #     # django says to not rely on this because shit can be renamed
-    #     # fair cop TODO: upload controls
+    # TODO: upload controls
 
     class Meta:
         model = csvDocument
@@ -37,6 +32,27 @@ class TeamValidationForm(forms.ModelForm):
         exclude = ('team_id', 'players')
 
 
+class PlayerNameValidationForm(forms.ModelForm):
+    match_present_and_selected = forms.BooleanField(required=False,
+                                                    initial=True)
+    # consider setting a label
+
+    class Meta:
+        model = Player
+        fields = ('match_present_and_selected', 'proper_name',)
+        widgets = {'proper_name': ModelSelect2Widget(
+                model=Player,
+                search_fields=['proper_name__icontains'],  # TODO (lp) allow search by pk (and nickname etc)
+                attrs={'data-width': '75%'},
+            )
+        }
+
+class PlayerDetailValidationForm(forms.ModelForm):
+    class Meta:
+        model = Player
+        exclude = ('player_ID', 'csv_names')
+
+
 class ValidationForm(forms.Form):
 
     choices = (
@@ -57,7 +73,7 @@ class ValidationForm(forms.Form):
         else:
             self.match = None
 
-        super(ValidationForm, self).__init__(data, *args, **kwargs)
+        super().__init__(data, *args, **kwargs)
 
         if self.match:
             self.fields['selection'].choices = (('provided', self.match), ('custom', 'custom'))
@@ -75,7 +91,6 @@ class ValidationForm(forms.Form):
 
 
 class AnalysisForm(forms.Form):
-    from .models import Team, Game
 
     team = forms.ModelChoiceField(
         queryset=Team.objects.all(),

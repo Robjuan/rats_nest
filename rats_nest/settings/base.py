@@ -18,6 +18,7 @@ https://docs.djangoproject.com/en/2.1/ref/settings/
 """
 
 import os, django_heroku
+#import urlparse, json
 
 #https://docs.djangoproject.com/en/2.1/howto/deployment/checklist/
 
@@ -52,7 +53,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'django_select2',
-    'mptt',
 
     'db_output'
 ]
@@ -60,7 +60,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
 
-    'whitenoise.middleware.WhiteNoiseMiddleware', # for serving static files
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # for serving static files
 
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -150,6 +150,19 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 # User-uploaded storage config
 
 MEDIA_ROOT = 'media'
+
+# Caches (largely for select2)
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django_bmemcached.memcached.BMemcached',
+        'LOCATION': os.environ.get('MEMCACHEDCLOUD_SERVERS').split(','),
+        'OPTIONS': {
+                    'username': os.environ.get('MEMCACHEDCLOUD_USERNAME'),
+                    'password': os.environ.get('MEMCACHEDCLOUD_PASSWORD')
+            }
+    }
+}
 
 # Log configuration
 

@@ -125,7 +125,7 @@ def parse_validate_team(request):
     # initial_data = [{'your_team_name': 'New Team Name', 'origin': 'Place Of Origin', 'division': 'M, W, X'}]
 
     if request.method == 'POST':
-        formset = TeamFormSet(request.POST, queryset=Team.objects.filter(team_name__contains=uploaded_team_name))
+        formset = TeamFormSet(request.POST, queryset=Team.objects.filter(team_name__icontains=uploaded_team_name))
         if formset.is_valid():  # will only return valid if all forms are valid
             selected_index = int(request.POST['selector'])  # 1-based form index (1 being first provided match)
             for index, form in enumerate(formset.forms, 1):
@@ -136,7 +136,7 @@ def parse_validate_team(request):
             return redirect('parse_validate_player')
 
     else:  # GET
-        formset = TeamFormSet(queryset=Team.objects.filter(team_name__contains=uploaded_team_name))
+        formset = TeamFormSet(queryset=Team.objects.filter(team_name__icontains=uploaded_team_name))
 
     return render(request, 'db_output/parse_validate_team.html', {'formset': formset, 'team_name': uploaded_team_name,
                                                                   'season': uploaded_season})
@@ -150,24 +150,45 @@ def parse_validate_player(request):
     :param request: django request object
     :return: response object
     """
+    from django.forms import modelformset_factory
+    from django.db.models import Q
     from .models import Player
-    from .forms import ValidationForm, VerifyConfirmForm
-    from .helpers import fetch_match
+    from .forms import PlayerNameValidationForm, PlayerDetailValidationForm
     logger = logging.getLogger(__name__)
-
-    # FIXME: if you refresh you redo the GET part with no processing
-
-    # TODO (now): replace radio with select2 search by type modelForm
-    # TODO: take in additional information about players
-
-
-    # this view should have three branches
-    # 1 - GET
-    # 2 - POST w/ no names remaining
-    # 3 - POST w/ names remaining
 
     player_list = request.session['player_list']
 
+    NameFormSet = modelformset_factory(Player, form=PlayerNameValidationForm)
+    DetailFormSet = modelformset_factory(Player, form=PlayerDetailValidationForm)
+
+    # generate initial data
+    matched_first_pks = []
+    for csv_name in player_list:  # | is OR
+        matches = Player.objects.filter(Q(proper_name__istartswith=csv_name) | Q(csv_names__icontains=csv_name))
+        matched_first_pks.append(matches.first().pk)
+
+    if request.method == 'POST':
+        name_formset = NameFormSet(queryset=Player.objects.filter(pk__in=matched_first_pks), prefix='names')
+        detail_formset = DetailFormSet(queryset=Player.objects.filter(pk__in=matched_first_pks), prefix='details')
+        if name_formset.is_valid() and detail_formset.is_valid():
+            # do something
+            # send to next thingo
+            pass
+
+        else:
+            # reload without POST data, send relevant alert?
+            pass
+
+    elif request.method == 'GET':
+        name_formset = NameFormSet(queryset=Player.objects.filter(pk__in=matched_first_pks), prefix='names')
+        detail_formset = DetailFormSet(queryset=Player.objects.filter(pk__in=matched_first_pks), prefix='details')
+
+        return render(request, 'db_output/parse_validate_player.html', context={'player_list': player_list,
+                                                                                'name_formset': name_formset,
+                                                                                'detail_formset': detail_formset})
+
+
+"""
     # Branch 1:
     if request.method == 'GET':
         csv_name = player_list.pop()
@@ -183,10 +204,14 @@ def parse_validate_player(request):
 
         match = fetch_match(csv_name)
         name_validation_form = ValidationForm(match=match)
+        details_validation_form = PlayerDetailValidationForm()
+        name_validation_form = PlayerNameValidationForm()
 
         request.session['conversion_dict'] = {}
         return render(request, 'db_output/parse_validate_player.html',
-                      context={'form': name_validation_form, 'csv_name': csv_name, 'results': str(player_list)})
+                      context={'nameform': name_validation_form,
+                               'detailform': details_validation_form,
+                               'csv_name': csv_name, 'results': str(player_list)})
 
     # Branch 2 and 3:
     if request.method == 'POST':
@@ -260,6 +285,7 @@ def parse_validate_player(request):
                                    'csv_name': csv_name,
                                    'results': 'Data entered was not valid, please retry'})
 
+"""
 
 def parse_verify(request):
     """

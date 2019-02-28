@@ -1,20 +1,56 @@
 {% extends 'db_output/base_bootstrap.html' %}
-{% if extra_head %} {{ extra_head }} {% endif %}
+{% load static %} {% load looping_extras %}
 
+{% block extra_head %}
+    <!-- select2 css -->
+    <!-- this should be {{ form.media.css }} for each form, but this works better for formsets -->
+    <link href="//cdnjs.cloudflare.com/ajax/libs/select2/4.0.5/css/select2.min.css" type="text/css" media="screen" rel="stylesheet">
+{% endblock %}
+
+<!-- jquery scripts -->
+{% block scripts %}
+    {{ name_formset.0.media.js }}
+    <script src="{% static 'validation_jquery.js' %}"></script>
+{% endblock %}
 
 {% block title %} Parse Validate Player {% endblock %}
 
 {% block content %}
 
-<!-- form up top to select which game you'd like to check parse of -->
+<h3> Please validate each player (from uploaded csv) against a Player in the database.</h3>
+<p>If the data shown are correct and complete, please leave the checkbox ticked and continue.<br>
+If the data are incomplete or incorrect, please make the appropriate changes and continue.<br>
+    If there is no appropriate match for the player, please uncheck the box and fill out all new information.<br></p>
 
-<h4> For each player mentioned in your UltiAnalytics csv,
-  we have attempted to match them with an existing player in our database<br>
-  Please select the appropriate player, or create a new player by inputting a new PROPER NAME<br></h4><p><p>
-    <!-- TODO (feat): allow input of primary key like an afda number etc -->
-    <!-- might be able to do with with ordering on the model and select2 inputs -->
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ name_formset.management_form }}
+    {{ detail_formset.management_form }}
+
+    <table class='table'>
+
+        <tr><th scope="col">Name in CSV</th><th scope="col">Select Existing Match</th><th scope="col">Provide Extra Detail</th></tr>
+
+        {% for name in player_list %}
+        <tr>
+            <td> {{ name }}</td>
+
+            {% index name_formset forloop.counter0 as name_form %}
+            <td>{{ name_form.as_p }} </td>
+
+            {% index detail_formset forloop.counter0 as detail_form %}
+            <td>{{ detail_form.as_p }} </td> <!-- TODO (lp): align fields -->
+        </tr>
+        {% endfor %}
+
+    </table>
+
+    <button type="submit">Save</button>
+
+</form>
 
 
+<!--
 <form method='post'>
     {% csrf_token %}
     {{ form.non_field_errors }}
@@ -23,7 +59,7 @@
     {{ form.selection.errors }}
 
     <div class="span4">
-        {{ form.selection.0 }} <!-- TODO: allow more than one suggested name option -->
+        {{ form.selection.0 }}  TODO: allow more than one suggested name option
     </div>
         <br>
     <div class="span4">
@@ -34,16 +70,11 @@
         <br>
     <button type="submit">Save</button>
 </form>
-
-<!-- this form needs to take in Division, Year (use the year the championship event is in)
-     this could be the time to take in opposing game ID or similar-->
-
+-->
 
 <!-- printed results below -->
-
 {% if results %}
-<p>
-{{ results }}
+<p>{{ results }}</p>
 {% endif %}
 
 {% endblock %}

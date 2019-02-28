@@ -48,7 +48,6 @@ def breakdown_data_file(file):
     :return: list of tuples (new_content_file, new_filename, opponent, datetime)
     """
     import csv
-    import linecache
     from django.core.files.base import ContentFile
 
     # TODO: build test for this
@@ -92,4 +91,3 @@ def breakdown_data_file(file):
 
     logger.info('Breaking file into '+str(len(file_list))+' sub files')
     return file_list
-

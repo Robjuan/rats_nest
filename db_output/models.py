@@ -43,7 +43,7 @@ class Player(models.Model):
         ordering = ('proper_name',)
 
     def __str__(self):
-        return 'Player - [id:' + str(self.player_ID) + '] ' + str(self.proper_name)
+        return str(self.proper_name) + ' [P id: ' + str(self.player_ID) + ']'
 
 
 # non-hierarchical (Pull at end of file)
