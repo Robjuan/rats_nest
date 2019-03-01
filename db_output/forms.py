@@ -47,6 +47,7 @@ class PlayerNameValidationForm(forms.ModelForm):
             )
         }
 
+
 class PlayerDetailValidationForm(forms.ModelForm):
     class Meta:
         model = Player

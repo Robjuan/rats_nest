@@ -9,6 +9,7 @@
 # pycharm files
 *.xml
 *.iml
+*.patch
 
 #environment specific
 .env

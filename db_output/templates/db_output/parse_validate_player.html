@@ -1,17 +1,14 @@
 {% extends 'db_output/base_bootstrap.html' %}
+{% if extra_head %} {{ extra_head }} {% endif %}
 {% load static %} {% load looping_extras %}
 
+<!-- select2 css -->
 {% block extra_head %}
-    <!-- select2 css -->
-    <!-- this should be {{ form.media.css }} for each form, but this works better for formsets -->
-    <link href="//cdnjs.cloudflare.com/ajax/libs/select2/4.0.5/css/select2.min.css" type="text/css" media="screen" rel="stylesheet">
+    {{ name_formset.1.media.css }}
 {% endblock %}
 
 <!-- jquery scripts -->
-{% block scripts %}
-    {{ name_formset.0.media.js }}
-    <script src="{% static 'validation_jquery.js' %}"></script>
-{% endblock %}
+<!-- {% block scripts %}<script src="{% static 'validation_jquery.js' %}"></script>{% endblock %} -->
 
 {% block title %} Parse Validate Player {% endblock %}
 
@@ -26,6 +23,7 @@ If the data are incomplete or incorrect, please make the appropriate changes and
     {% csrf_token %}
     {{ name_formset.management_form }}
     {{ detail_formset.management_form }}
+    {{ name_formset.0.media.js }}
 
     <table class='table'>
 
@@ -48,33 +46,5 @@ If the data are incomplete or incorrect, please make the appropriate changes and
     <button type="submit">Save</button>
 
 </form>
-
-
-<!--
-<form method='post'>
-    {% csrf_token %}
-    {{ form.non_field_errors }}
-
-    <h5>Provided Name: {{ csv_name }}</h5><br>
-    {{ form.selection.errors }}
-
-    <div class="span4">
-        {{ form.selection.0 }}  TODO: allow more than one suggested name option
-    </div>
-        <br>
-    <div class="span4">
-        {{ form.selection.1 }}
-        {{ form.custom_name }}
-        {{ form.custom_name.errors }}
-    </div>
-        <br>
-    <button type="submit">Save</button>
-</form>
--->
-
-<!-- printed results below -->
-{% if results %}
-<p>{{ results }}</p>
-{% endif %}
 
 {% endblock %}
