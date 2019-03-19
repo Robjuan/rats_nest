@@ -25,6 +25,7 @@ class Player(models.Model):
 
     # non-key
     proper_name = models.CharField(max_length=30)
+    # TODO: add DOB field
     hometown = models.CharField(max_length=30,
                                 blank=True)
     position = models.CharField(max_length=30,
@@ -115,11 +116,11 @@ class Game(models.Model):
 
     def __str__(self):
         if self.opposing_team:
-            return '[G '+str(self.game_ID)+': ' + str(self.team.team_name) + ' vs ' +str(self.opposing_team.team_name) +\
+            return '[G '+str(self.game_ID)+']: ' + str(self.team.team_name) + ' vs ' +str(self.opposing_team.team_name) +\
                    ' @ ' + str(self.tournament_name)
 
         else:
-            return '[G '+str(self.game_ID)+': ' + str(self.team.team_name) + ' @ ' + str(self.tournament_name) +\
+            return '[G '+str(self.game_ID)+']: ' + str(self.team.team_name) + ' @ ' + str(self.tournament_name) +\
                    ' @ ' + str(self.datetime)[:19]
 
 

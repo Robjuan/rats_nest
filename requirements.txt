@@ -7,3 +7,4 @@ whitenoise
 django_select2
 python-binary-memcached
 django-bmemcached
+pylibmc

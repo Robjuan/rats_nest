@@ -8,7 +8,7 @@
 {% endblock %}
 
 <!-- jquery scripts -->
-<!-- {% block scripts %}<script src="{% static 'validation_jquery.js' %}"></script>{% endblock %} -->
+{% block extra_scripts %}<script src="{% static 'validation_jquery.js' %}"></script>{% endblock %}
 
 {% block title %} Parse Validate Player {% endblock %}
 
@@ -19,15 +19,21 @@
 If the data are incomplete or incorrect, please make the appropriate changes and continue.<br>
     If there is no appropriate match for the player, please uncheck the box and fill out all new information.<br></p>
 
+{% if warning %}<div class='alert alert-danger'>{{ warning }}</div>{% endif %}
+
+<div id="ajax_return"></div>
+
 <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
+
     {{ name_formset.management_form }}
     {{ detail_formset.management_form }}
+
     {{ name_formset.0.media.js }}
 
     <table class='table'>
 
-        <tr><th scope="col">Name in CSV</th><th scope="col">Select Existing Match</th><th scope="col">Provide Extra Detail</th></tr>
+        <tr><th scope="col">Name in CSV</th><th scope="col">Database Match</th><th scope="col">Custom/Extra Detail</th></tr>
 
         {% for name in player_list %}
         <tr>

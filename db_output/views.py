@@ -2,7 +2,7 @@
 # contains the logic for presenting all non-trivial pages on the site
 
 from django.shortcuts import render, redirect
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.conf import settings
 import logging
 
@@ -150,142 +150,147 @@ def parse_validate_player(request):
     :param request: django request object
     :return: response object
     """
-    from django.forms import modelformset_factory
-    from django.db.models import Q
+    from django.forms import modelformset_factory, model_to_dict
     from .models import Player
     from .forms import PlayerNameValidationForm, PlayerDetailValidationForm
+    from .helpers import get_best_match
+
     logger = logging.getLogger(__name__)
 
     player_list = request.session['player_list']
 
-    NameFormSet = modelformset_factory(Player, form=PlayerNameValidationForm)
-    DetailFormSet = modelformset_factory(Player, form=PlayerDetailValidationForm)
+    NameFormSet = modelformset_factory(Player, form=PlayerNameValidationForm, extra=0)
+    DetailFormSet = modelformset_factory(Player, form=PlayerDetailValidationForm, extra=0)
 
-    # generate initial data
-    matched_first_pks = []
-    for csv_name in player_list:  # | is OR
-        matches = Player.objects.filter(Q(proper_name__istartswith=csv_name) | Q(csv_names__icontains=csv_name))
-        matched_first_pks.append(matches.first().pk)
+    # generate initial matches
+    matched_pks = []
+    for csv_name in player_list:
+        matched_pks.append(get_best_match(csv_name))
+
+    # create dict for ajax
+    match_dict = {}
+    for i in range(0, len(matched_pks)):
+        matched_player = Player.objects.get(pk=matched_pks[i])
+        match_dict[i] = (matched_player.pk, str(matched_player))
+    request.session['match_dict'] = match_dict
 
     if request.method == 'POST':
-        name_formset = NameFormSet(queryset=Player.objects.filter(pk__in=matched_first_pks), prefix='names')
-        detail_formset = DetailFormSet(queryset=Player.objects.filter(pk__in=matched_first_pks), prefix='details')
+        name_formset = NameFormSet(request.POST,
+                                   queryset=Player.objects.filter(pk__in=matched_pks), prefix='names')
+        detail_formset = DetailFormSet(request.POST,
+                                       queryset=Player.objects.filter(pk__in=matched_pks), prefix='details')
         if name_formset.is_valid() and detail_formset.is_valid():
-            # do something
-            # send to next thingo
-            pass
+            new_to_create = []
+            existing_to_update = []
+
+            to_confirm = []
+
+            index = 0
+            for nameform, detailform in zip(name_formset, detail_formset):
+                # cleaned_data['player_ID'] returns the Player object
+                csv_name = player_list[index]
+
+                this_player = detailform.save(commit=False)
+                this_player_info = model_to_dict(this_player)
+
+                if not nameform.cleaned_data['match_present_and_selected']:  # if new player required
+                    this_player_info['player_ID'] = None  # else will be player_ID from detail form (old)
+                    new_to_create.append((csv_name, this_player_info))
+                else:
+                    existing_to_update.append((csv_name, this_player_info))
+
+                # this is not presented as editable, so we must append it manually
+                if csv_name not in this_player_info['csv_names']:
+                    new = this_player_info['csv_names'] + ',' + csv_name
+                    this_player_info['csv_names'] = new
+
+                to_confirm.append((csv_name, this_player_info))
+
+                index += 1
+
+            # data for display
+            request.session['to_confirm'] = to_confirm
+            # data for database operations after confirm
+            request.session['existing_to_update'] = existing_to_update
+            request.session['new_to_create'] = new_to_create
+
+            return HttpResponseRedirect('parse_verify')
 
         else:
-            # reload without POST data, send relevant alert?
-            pass
+            logger.warning('request.method = ' + str(request.method))
+            if name_formset.is_valid():
+                warning_string = 'Detail forms were not valid'
+                logger.warning(detail_formset.errors)
+            elif detail_formset.is_valid():
+                warning_string = 'Name forms were not valid'
+                logger.warning(name_formset.errors)
+            else:
+                warning_string = 'All forms were not valid'
+
+            name_formset = NameFormSet(queryset=Player.objects.filter(pk__in=matched_pks), prefix='names')
+            detail_formset = DetailFormSet(queryset=Player.objects.filter(pk__in=matched_pks), prefix='details')
+
+            return render(request, 'db_output/parse_validate_player.html', context={'warning': warning_string,
+                                                                                    'player_list': player_list,
+                                                                                    'name_formset': name_formset,
+                                                                                    'detail_formset': detail_formset})
 
     elif request.method == 'GET':
-        name_formset = NameFormSet(queryset=Player.objects.filter(pk__in=matched_first_pks), prefix='names')
-        detail_formset = DetailFormSet(queryset=Player.objects.filter(pk__in=matched_first_pks), prefix='details')
+        name_formset = NameFormSet(queryset=Player.objects.filter(pk__in=matched_pks), prefix='names')
+        detail_formset = DetailFormSet(queryset=Player.objects.filter(pk__in=matched_pks), prefix='details')
 
         return render(request, 'db_output/parse_validate_player.html', context={'player_list': player_list,
                                                                                 'name_formset': name_formset,
                                                                                 'detail_formset': detail_formset})
 
 
-"""
-    # Branch 1:
-    if request.method == 'GET':
-        csv_name = player_list.pop()
-        request.session['player_list'] = player_list
-        request.session['prev_csv_name'] = csv_name
+def get_initial_match(request):
+    """
+    called only by ajax - validation_jquery.js
 
-        # these are to store data so that we can do the database operations in the next view (after confirm is pressed)
-        # saving pickled objects to session is EXTREMELY INSECURE if using untrusted session engine (like cookies)
-        # this code here won't change if the session engine ever changes
-        # unpickling can result in arbitrary code execution
-        request.session['matched_to_update'] = []
-        request.session['nonmatched_to_create'] = []
+    :param request:
+    :return: json
+    """
+    match_dict = request.session['match_dict']
+    full_element_id = request.POST['form_id']
+    prefix, form_id, field_id = full_element_id.split('-')
 
-        match = fetch_match(csv_name)
-        name_validation_form = ValidationForm(match=match)
-        details_validation_form = PlayerDetailValidationForm()
-        name_validation_form = PlayerNameValidationForm()
+    match_id, match_text = match_dict[form_id]
 
-        request.session['conversion_dict'] = {}
-        return render(request, 'db_output/parse_validate_player.html',
-                      context={'nameform': name_validation_form,
-                               'detailform': details_validation_form,
-                               'csv_name': csv_name, 'results': str(player_list)})
+    return JsonResponse({'success': True,
+                         'match_text': match_text,
+                         'match_id': match_id})
 
-    # Branch 2 and 3:
-    if request.method == 'POST':
 
-        nonmatched_to_create = request.session['nonmatched_to_create']
-        matched_to_update = request.session['matched_to_update']
-        csv_name = request.session['prev_csv_name']
-        match = fetch_match(csv_name)
+def update_player_details_form(request):
+    """
+    called only by ajax - validation_jquery.js
 
-        # Branch 3
-        name_validation_form = ValidationForm(request.POST, match=match)
-        # not supplying match here makes the form set a custom name to required, and then the next line returns False
-        if name_validation_form.is_valid():
-            results = name_validation_form.cleaned_data
+    :param request:
+    :return: json
+    """
+    from .models import Player
 
-            # conversion dict will be { csv_name : actual_player_pk }
-            new_dict = request.session['conversion_dict']
+    logger = logging.getLogger(__name__)
+    # logger.debug(request.session['player_list'])
 
-            # this means that if there is no match, regardless of form choice, the custom name provided will be used
-            # if there is no match, the form will require a custom name to be inputted
-            if results['selection'] == 'provided' and match:
-                # find player object based on match, put in pk
-                new_dict[csv_name] = match.player_ID
-                match.csv_names = match.csv_names + ',' + csv_name
-                matched_to_update.append(match.player_ID)
+    full_element_id = request.POST['form_id']
+    # select2 boxes are id'd in format : id_names-*-proper_name
+    prefix, form_id, field_id = full_element_id.split('-')
 
-            else:
-                given_name = results['custom_name']
-                # when we create conversion dict from custom names we do not know their pks yet bc no object
-                # that is why conversion dict is empty on this page after a fully new team
-                # this will be written over with new pks in parse_results (after confirmation)
+    selected_player = Player.objects.get(pk=request.POST['selection_data'])
 
-                # new_dict[csv_name] = 'newly added player, ID to be created on confirmation'
-                new_dict[csv_name] = given_name
-                nonmatched_to_create.append((given_name, csv_name))
+    field_data = {'player_ID': selected_player.player_ID,
+                  'proper_name': selected_player.proper_name,
+                  'hometown': selected_player.hometown,
+                  'position': selected_player.position,
+                  'nickname': selected_player.nickname,
+                  'numbers': selected_player.numbers}
 
-            request.session['conversion_dict'] = new_dict
-            request.session['nonmatched_to_create'] = nonmatched_to_create
-            request.session['matched_to_update'] = matched_to_update
+    return JsonResponse({'field_data': field_data,
+                         'success': True,
+                         'form_id': form_id})
 
-            # Branch 2:
-            if not player_list:  # if we have looped over everyone
-                to_confirm = []
-                temp_dict = request.session['conversion_dict']
-                for k, v in temp_dict.items():
-                    if isinstance(v, int):  # is not a new player
-                        to_confirm.append((k, v, Player.objects.get(pk=v).proper_name))
-                    else:  # new player, v = given_name
-                        to_confirm.append((k, 'n/a', v))
-
-                logger.debug('sending to parse_verify')
-                request.session['to_confirm'] = to_confirm
-                return redirect('parse_verify')
-
-            csv_name = player_list.pop()
-            request.session['player_list'] = player_list
-            request.session['prev_csv_name'] = csv_name
-            match = fetch_match(csv_name)
-            name_validation_form = ValidationForm(match=match)
-
-            return render(request, 'db_output/parse_validate_player.html',
-                          context={'form': name_validation_form,
-                                   'csv_name': csv_name,
-                                   'results': str(request.session['conversion_dict'])})
-
-        else:
-            # reload the page with everything as it was if invalid input
-            name_validation_form = ValidationForm(match=match)
-            return render(request, 'db_output/parse_validate_player.html',
-                          context={'form': name_validation_form,
-                                   'csv_name': csv_name,
-                                   'results': 'Data entered was not valid, please retry'})
-
-"""
 
 def parse_verify(request):
     """
@@ -324,7 +329,7 @@ def parse_results(request):
     :return: response
     """
     from .ua_parser import parse
-    from . import models
+    from .models import Player, Team
 
     # TODO (testing) break out logic into more easily testable funcs
 
@@ -332,31 +337,39 @@ def parse_results(request):
     #     raise (some error that sends us home)
 
     all_players = []
-    for player_pk in request.session['matched_to_update']:
-        p = models.Player.objects.get(pk=player_pk)
-        p.save()
-        all_players.append(p)
-
-    for given_name, csv_name in request.session['nonmatched_to_create']:
-        p = models.Player(proper_name=given_name, csv_names=csv_name)
-        p.save()
-        all_players.append(p)
-        temp_dict = request.session['conversion_dict']
-        temp_dict[csv_name] = p.player_ID
-        request.session['conversion_dict'] = temp_dict
-
     temp_dict = request.session['conversion_dict']
+
+    for csv_name, player_info in request.session['new_to_create']:
+        p = Player(**player_info)
+        p.save()
+        temp_dict[csv_name] = p.player_ID
+        all_players.append(p)
+
+    for csv_name, player_info in request.session['existing_to_update']:
+        p = Player.objects.get(pk=player_info['player_ID'])
+
+        # TODO (now) this results in blanks being added to blanks with just a comma
+        # and also duplicate csv_names
+        numbers_now = p.numbers
+        p.numbers = numbers_now + ',' + str(player_info.pop('numbers'))
+        csv_names_now = p.csv_names
+        p.csv_names = csv_names_now + ',' + str(player_info.pop('csv_names'))
+
+        for attr, value in player_info.items():
+            setattr(p, attr, value)
+
+        p.save()
+        temp_dict[csv_name] = p.player_ID
+        all_players.append(p)
+
     temp_dict['Anonymous'] = -1
     request.session['conversion_dict'] = temp_dict
     # this means that in ua_parser it won't fail when we reach a blank name
-    # handle_check_player will see this do well with it
-
-    # creating the player objects can happen here, and therefore creating the team object is ok
-    # both should be persistent beyond the scope of a single csv, and thus parse call
+    # handle_check_player will see this and do well with it
 
     team_obj_pk = request.session['team_obj_pk']
 
-    this_team = models.Team.objects.get(pk=team_obj_pk)
+    this_team = Team.objects.get(pk=team_obj_pk)
     for player in all_players:
         # establish m2m relationship
         this_team.players.add(player.player_ID)

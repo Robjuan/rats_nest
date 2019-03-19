@@ -19,4 +19,17 @@ DATABASES = {
 
 DATABASES['default'].update(dj_database_url.config())  # now working on remote heroku !!!
 
+# Caches (largely for select2)
+CACHES = {
+    'default': {
+        'BACKEND': 'django_bmemcached.memcached.BMemcached',
+        'LOCATION': os.environ.get('MEMCACHEDCLOUD_SERVERS').split(','),
+        'TIMEOUT': 1200,  # 1200 seconds = 20 minutes
+        'OPTIONS': {
+                    'username': os.environ.get('MEMCACHEDCLOUD_USERNAME'),
+                    'password': os.environ.get('MEMCACHEDCLOUD_PASSWORD')
+            }
+    }
+}
+
 logger.info('heroku_production settings loaded')

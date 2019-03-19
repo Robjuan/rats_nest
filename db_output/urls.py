@@ -15,6 +15,10 @@ urlpatterns = [
     path('parse_select', views.parse_select, name='parse_select'),
     path('parse_validate_team', views.parse_validate_team, name='parse_validate_team'),
     path('parse_validate_player', views.parse_validate_player, name='parse_validate_player'),
+    # # player validation ajax
+    path('parse_validate_player/update_details', views.update_player_details_form, name='update_details'),
+    path('parse_validate_player/get_initial_match', views.get_initial_match, name='get_initial_match'),
+
     path('parse_verify', views.parse_verify, name='parse_verify'),
     path('parse_results', views.parse_results, name='parse_results'),
 

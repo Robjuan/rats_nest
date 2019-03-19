@@ -4,6 +4,25 @@
 import logging
 
 
+def get_best_match(csv_name):
+    """
+    Finds player object matching given csv_name, if exists
+
+    :param csv_name: str used to represent player in UA csv
+    :return: pk of player object if match, else None
+    """
+    # TODO (lp): more accurate similarity test than "first"
+    from .models import Player
+    from django.db.models import Q
+
+    matches = Player.objects.filter(Q(proper_name__istartswith=csv_name) | Q(csv_names__icontains=csv_name))
+
+    if matches.first():
+        return matches.first().pk
+    else:
+        return None
+
+
 def not_blank_or_anonymous(name):
     """
     Tests for empty string or string equates to Anonymous
@@ -20,23 +39,6 @@ def not_blank_or_anonymous(name):
             logger = logging.getLogger(__name__)
             logger.debug('Blank name being filtered')
         return False
-
-
-def fetch_match(csv_name):
-    """
-    Finds player object matching given csv_name, if exists
-
-    :param csv_name: str used to represent player in UA csv
-    :return: player object if match, else None
-    """
-    from .models import Player
-
-    for stored_player in Player.objects.all():
-        if csv_name in stored_player.csv_names or csv_name == stored_player.proper_name:
-            return stored_player
-
-    # only if no match found
-    return None
 
 
 def breakdown_data_file(file):

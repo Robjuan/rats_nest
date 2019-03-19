@@ -34,9 +34,10 @@ class TeamValidationForm(forms.ModelForm):
 
 class PlayerNameValidationForm(forms.ModelForm):
     match_present_and_selected = forms.BooleanField(required=False,
-                                                    initial=True)
-    # consider setting a label
+                                                    initial=True,
+                                                    label='Use selected match')
 
+    # TODO (lp): restrict access to test data
     class Meta:
         model = Player
         fields = ('match_present_and_selected', 'proper_name',)
