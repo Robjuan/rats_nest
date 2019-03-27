@@ -15,9 +15,6 @@ def completion_pct_by_player(games, player, return_count=False, decimal_places=2
     :return: completion % for player over specified game(s)
     """
 
-    # TODO (now) stop using decimal? work out something that works with int
-    from decimal import Decimal
-
     total_throws = 0
     total_throwaways = 0
 
@@ -32,7 +29,7 @@ def completion_pct_by_player(games, player, return_count=False, decimal_places=2
         total_throwaways += this_game_throwaways.count()
 
     if total_throws:
-        completion = Decimal((total_throws - total_throwaways) / total_throws)*100
+        completion = float((total_throws - total_throwaways) / total_throws)*100
         completion = round(completion, decimal_places)
     else:
         completion = 0

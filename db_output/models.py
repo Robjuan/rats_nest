@@ -25,18 +25,18 @@ class Player(models.Model):
 
     # non-key
     proper_name = models.CharField(max_length=30)
-    # TODO: add DOB field
+
+    dob = models.DateField(max_length=8,
+                           blank=True,
+                           null=True)
     hometown = models.CharField(max_length=30,
                                 blank=True)
     position = models.CharField(max_length=30,
                                 blank=True)
-
     nickname = models.CharField(max_length=255,
                                 blank=True)
-
     numbers = models.CharField(max_length=255,
                                blank=True)
-
     csv_names = models.CharField(max_length=255,
                                  blank=True)  # comma separated values in a string
 
@@ -46,8 +46,14 @@ class Player(models.Model):
     def __str__(self):
         return str(self.proper_name) + ' [P id: ' + str(self.player_ID) + ']'
 
+    def add_if_not_blank_or_existing(self, attr, value):
+        now = getattr(self, attr)
+        if now and value not in now:
+            new = now + ',' + value
+        else:
+            new = now
+        setattr(self, attr, new)
 
-# non-hierarchical (Pull at end of file)
 
 class Team(models.Model):
     DIVISION_CHOICES = (
@@ -107,6 +113,8 @@ class Game(models.Model):
                                 blank=True)
     conditions = models.CharField(max_length=30,
                                   blank=True)
+    notes = models.CharField(max_length=255,
+                             blank=True)
 
     # verification is just an extra flag for us to show what is legit data - will mostly be on
     verified = models.BooleanField()
@@ -116,15 +124,14 @@ class Game(models.Model):
 
     def __str__(self):
         if self.opposing_team:
-            return '[G '+str(self.game_ID)+']: ' + str(self.team.team_name) + ' vs ' +str(self.opposing_team.team_name) +\
+            return '[G '+str(self.game_ID)+']: ' +\
+                   str(self.team.team_name) + ' vs ' + str(self.opposing_team.team_name) +\
                    ' @ ' + str(self.tournament_name)
 
         else:
             return '[G '+str(self.game_ID)+']: ' + str(self.team.team_name) + ' @ ' + str(self.tournament_name) +\
                    ' @ ' + str(self.datetime)[:19]
 
-
-# hierarchical
 
 class Point(models.Model):
     point_ID = models.AutoField(primary_key=True)

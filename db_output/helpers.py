@@ -4,19 +4,28 @@
 import logging
 
 
-def get_best_match(csv_name):
+def get_best_match(model, name):
     """
-    Finds player object matching given csv_name, if exists
+    Finds object matching given name, used for validation
 
-    :param csv_name: str used to represent player in UA csv
+    :param name: str used to represent player in UA csv
+    :param model: model to search (only Team and Player supported)
     :return: pk of player object if match, else None
     """
-    # TODO (lp): more accurate similarity test than "first"
-    from .models import Player
+    from .models import Player, Team
     from django.db.models import Q
 
-    matches = Player.objects.filter(Q(proper_name__istartswith=csv_name) | Q(csv_names__icontains=csv_name))
+    logger = logging.getLogger(__name__)
 
+    if model == Player:
+        matches = Player.objects.filter(Q(proper_name__istartswith=name) | Q(csv_names__icontains=name))
+    elif model == Team:
+        matches = Team.objects.filter(team_name__icontains=name)
+    else:
+        logger.warning('only Player and Team are supported models for get_best_match')
+        return None
+
+    # TODO (lp): more accurate similarity test than "first"
     if matches.first():
         return matches.first().pk
     else:

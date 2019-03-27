@@ -1,6 +1,7 @@
 from django import forms
 from django_select2.forms import ModelSelect2MultipleWidget, ModelSelect2Widget
 from .models import csvDocument, Team, Player, Game
+from django.forms.widgets import DateInput
 
 
 class csvDocumentForm(forms.ModelForm):
@@ -26,70 +27,58 @@ class fileSelector(forms.Form):
             self.initial = selected
 
 
-class TeamValidationForm(forms.ModelForm):
-    class Meta:
-        model = Team
-        exclude = ('team_id', 'players')
+# TODO (lp): restrict access to test data
+# equivalent to "name form"
+def get_primary_validation_form(param_model, field):
+    import logging
+    logger = logging.getLogger(__name__)
 
+    class PrimaryValidationForm(forms.ModelForm):
+        selected = forms.BooleanField(required=False,
+                                      initial=True,
+                                      label='Use selected match')
 
-class PlayerNameValidationForm(forms.ModelForm):
-    match_present_and_selected = forms.BooleanField(required=False,
-                                                    initial=True,
-                                                    label='Use selected match')
-
-    # TODO (lp): restrict access to test data
-    class Meta:
-        model = Player
-        fields = ('match_present_and_selected', 'proper_name',)
-        widgets = {'proper_name': ModelSelect2Widget(
-                model=Player,
-                search_fields=['proper_name__icontains'],  # TODO (lp) allow search by pk (and nickname etc)
-                attrs={'data-width': '75%'},
+        class Meta:
+            model = param_model
+            fields = ('selected', field,)
+            widgets = {field: ModelSelect2Widget(
+                model=param_model,
+                search_fields=[field + '__icontains'],
+                attrs={'data-width': '75%',
+                       'class': str(param_model.__name__) + '_primaryform'},
             )
-        }
+            }
+
+    return PrimaryValidationForm
 
 
-class PlayerDetailValidationForm(forms.ModelForm):
-    class Meta:
-        model = Player
-        exclude = ('player_ID', 'csv_names')
+# equivalent to "detail form"
+def get_secondary_validation_form(param_model):
+    import logging
+    logger = logging.getLogger(__name__)
 
+    class SecondaryValidationForm(forms.ModelForm):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            for field_name, field in self.fields.items():
+                field.widget.attrs['class'] = str(param_model.__name__) + '_secondaryform'
 
-class ValidationForm(forms.Form):
+        class Meta:
+            model = param_model
+            if param_model == Team:
+                exclude = ('players',)
+                # Team is done individually, so modelformset will not forcibly rendering the pk field
+                # AutoFields are not displayable manually
+                # However, we can fetch the selected pk from the select2 box using javascript
 
-    choices = (
-        ('provided', 'no match found, please provide custom name'),
-        ('custom', 'custom')
-    )
+            elif param_model == Player:
+                # player_ID is excluded because we do not want to render it
+                # however, a modelformset requires it and will forcibly render it as a hidden field
+                # this is good because we actually need it to save the player pk
+                exclude = ('player_ID', 'csv_names')
+                widgets = {'dob': DateInput(attrs={'type': 'date'})}  # might not work in FF or Safari?
 
-    selection = forms.ChoiceField(
-        choices=choices, widget=forms.RadioSelect)
-    custom_name = forms.CharField(
-        label="", required=False)
-
-    def __init__(self, data=None, *args, **kwargs):
-        if 'match' in kwargs:
-            self.match = kwargs.pop('match')
-            if self.match == 'None':
-                self.match = None  # this feels not pythonic
-        else:
-            self.match = None
-
-        super().__init__(data, *args, **kwargs)
-
-        if self.match:
-            self.fields['selection'].choices = (('provided', self.match), ('custom', 'custom'))
-
-        # charfield only NOT required if both a valid match avail, and that match is picked
-        if data and data.get('selection', None) == 'custom':
-            self.fields['custom_name'].required = True
-        if not self.match:
-            self.fields['custom_name'].required = True
-
-    def get_match(self):
-        # match isn't part of cleaned_data but we still want to know if one exists
-        # 20/1/18 is this being used anywhere?
-        return self.match
+    return SecondaryValidationForm
 
 
 class AnalysisForm(forms.Form):
@@ -105,8 +94,10 @@ class AnalysisForm(forms.Form):
         )
     )
 
+    # TODO: filter out non-verified data here
     games = forms.ModelMultipleChoiceField(
-        queryset=Game.objects.all(),
+        # queryset=Game.objects.all(),
+        queryset=Game.objects.filter(verified=True),
         label="Game(s)",
         widget=ModelSelect2MultipleWidget(
             model=Game,
