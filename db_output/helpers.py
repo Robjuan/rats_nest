@@ -4,6 +4,74 @@
 import logging
 
 
+def generate_readable(instance):
+    logger = logging.getLogger(__name__)
+
+    disp_dict = {}
+    for field in instance._meta.fields:
+
+        # logger.debug(field.name)
+        disp_dict[field.name] = str(getattr(instance, field.name))
+
+    return disp_dict
+
+
+def generate_active_form_dict(match_dict):
+    """
+    creates a dict based on enumeration
+    order of match_dict should match that of formset
+    keys of return dict will then match to formset form indices
+
+    :param match_dict: OrderedDict of matches
+    :return:
+    """
+    from collections import OrderedDict
+
+    logger = logging.getLogger(__name__)
+
+    if not isinstance(match_dict, OrderedDict):
+        logger.warning('match_dict is not OrderedDict - ordering is assumed')
+
+    active_form_dict = OrderedDict()
+    for index, match in enumerate(match_dict.values()):
+        # index here will match the form index
+        if match[0]:  # match is tuple (pk, str) (pk = None if no match)
+            active_form_dict[index] = 1  # primary active
+        else:
+            active_form_dict[index] = 2  # secondary active
+
+    return active_form_dict
+
+
+def get_best_match(model, name):
+    """
+    Finds object matching given name, used for validation
+
+    :param name: str used to represent player in UA csv
+    :param model: model to search (only Team and Player supported)
+    :return: pk of player object if match, else None
+    """
+    from .models import Player, Team
+    from django.db.models import Q
+
+    logger = logging.getLogger(__name__)
+
+    if model == Player:
+        matches = Player.objects.filter(Q(proper_name__istartswith=name) | Q(csv_names__icontains=name)).order_by('player_ID')
+    elif model == Team:
+        matches = Team.objects.filter(team_name__icontains=name).order_by('team_ID')
+    else:
+        logger.warning('only Player and Team are supported models for get_best_match')
+        return None
+
+    # TODO (lp): more accurate similarity test than "first"
+    if matches.first():
+        return matches.first().pk
+    else:
+        logger.info('no match found for '+str(name))
+        return None
+
+
 def not_blank_or_anonymous(name):
     """
     Tests for empty string or string equates to Anonymous
@@ -22,23 +90,6 @@ def not_blank_or_anonymous(name):
         return False
 
 
-def fetch_match(csv_name):
-    """
-    Finds player object matching given csv_name, if exists
-
-    :param csv_name: str used to represent player in UA csv
-    :return: player object if match, else None
-    """
-    from .models import Player
-
-    for stored_player in Player.objects.all():
-        if csv_name in stored_player.csv_names or csv_name == stored_player.proper_name:
-            return stored_player
-
-    # only if no match found
-    return None
-
-
 def breakdown_data_file(file):
     """
     Takes a csv data file with an arbitrary number of games,
@@ -48,7 +99,6 @@ def breakdown_data_file(file):
     :return: list of tuples (new_content_file, new_filename, opponent, datetime)
     """
     import csv
-    import linecache
     from django.core.files.base import ContentFile
 
     # TODO: build test for this
@@ -92,4 +142,3 @@ def breakdown_data_file(file):
 
     logger.info('Breaking file into '+str(len(file_list))+' sub files')
     return file_list
-

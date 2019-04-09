@@ -1,49 +1,83 @@
 {% extends 'db_output/base_bootstrap.html' %}
 {% if extra_head %} {{ extra_head }} {% endif %}
+{% load static %} {% load looping_extras %}
 
+<!-- select2 css -->
+{% block extra_head %}
+    {{ primary_formset.1.media.css }}
+{% endblock %}
+
+<!-- jquery scripts -->
+{% block extra_scripts %}<script src="{% static 'validation_jquery.js' %}"></script>{% endblock %}
 
 {% block title %} Parse Validate Player {% endblock %}
 
 {% block content %}
 
-<!-- form up top to select which game you'd like to check parse of -->
+<h3> Player Validation </h3>
+{% if filename %} Filename: <b> {{ filename }} </b><br> {% endif %}
 
-<h4> For each player mentioned in your UltiAnalytics csv,
-  we have attempted to match them with an existing player in our database<br>
-  Please select the appropriate player, or create a new player by inputting a new PROPER NAME<br></h4><p><p>
-    <!-- TODO (feat): allow input of primary key like an afda number etc -->
-    <!-- might be able to do with with ordering on the model and select2 inputs -->
+ Please validate each player (from uploaded csv) against a Player in the database.<p>
 
+Check each player currently matched and continue.<br>
+If the player currently matched is incorrect, please search for a different player in our database.<br>
+If there is no appropriate match for the player, please check the custom box and fill out all new information.<br><p>
 
-<form method='post'>
+{% if warning %}<div class='alert alert-danger'>{{ warning }}</div>{% endif %}
+
+<div id="ajax_return"></div>
+
+<form method="post" enctype="multipart/form-data">
     {% csrf_token %}
-    {{ form.non_field_errors }}
 
-    <h5>Provided Name: {{ csv_name }}</h5><br>
-    {{ form.selection.errors }}
+    {{ primary_formset.management_form }}
+    {{ secondary_formset.management_form }}
 
-    <div class="span4">
-        {{ form.selection.0 }} <!-- TODO: allow more than one suggested name option -->
-    </div>
-        <br>
-    <div class="span4">
-        {{ form.selection.1 }}
-        {{ form.custom_name }}
-        {{ form.custom_name.errors }}
-    </div>
-        <br>
+    {{ primary_formset.0.media.js }}
+
+    <table class='table'>
+
+        <tr><th scope="col">Name in CSV</th><th scope="col">Player Validation</th>
+
+        {% for name in player_list %}
+        <tr>
+            <td>{{ name }}</td>
+
+            <td>
+                {% index primary_formset forloop.counter0 as primary_form %}
+                {{ primary_form.selected.label_tag }} {{ primary_form.selected }}
+                <div id="primary_form_div-{{ forloop.counter0 }}"><p>{{ primary_form.proper_name }}</p>
+                    {{ primary_form.errors }}
+                    <div id="primary_form_extra_details-{{ forloop.counter0 }}"><!-- jquery puts player info here --></div>
+                    {% for field in primary_form.hidden_fields %}
+                        {{ field }}
+                    {% endfor %}
+                </div>
+
+                {% index secondary_formset forloop.counter0 as secondary_form %}
+                <div id="secondary_form_div-{{ forloop.counter0}}">
+                    <table>
+                    {% for field in secondary_form.visible_fields %}
+                        <tr>
+                            <td>{{ field.label_tag }}</td>
+                            <td>{{ field }}</td>
+                        </tr>
+                    {% endfor %}
+                    {% for field in secondary_form.hidden_fields %}
+                        {{ field }}
+                    {% endfor %}
+                    </table>
+                    {{ secondary_form.errors }}
+                </div>
+            </td>
+
+        </tr>
+        {% endfor %}
+
+    </table>
+
     <button type="submit">Save</button>
+
 </form>
-
-<!-- this form needs to take in Division, Year (use the year the championship event is in)
-     this could be the time to take in opposing game ID or similar-->
-
-
-<!-- printed results below -->
-
-{% if results %}
-<p>
-{{ results }}
-{% endif %}
 
 {% endblock %}

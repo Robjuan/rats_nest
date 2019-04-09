@@ -70,15 +70,13 @@ def parse_select(request):
 
     logger = logging.getLogger(__name__)
 
-    # TODO: clean session
-
     filelist = []
 
-    # apparently dynamic choices should be done via foreignkey?
     # choices needs a list of 2-tuples, [value, humanreadable]
 
+    # TODO (lp) make this a login required checkbox on the page
+
     if settings.DEBUG:
-        logger.warning('presenting parsed objects as parseable')
         for obj in csvDocument.objects.all():
             if obj.parsed:
                 filelist.append((obj.id, 'parsed: '+str(obj)))
@@ -97,10 +95,154 @@ def parse_select(request):
             # TODO (lp) why are there blank names
             request.session['player_list'] = player_list
 
-            return redirect('parse_validate_player')
+            return redirect('parse_validate_team')
     else:
+        if settings.DEBUG:
+            logger.warning('presenting parsed objects as parseable')
+
         form = fileSelector(choices=filelist)
         return render(request, 'db_output/parse_select.html', {'form': form})
+
+
+def parse_validate_team(request):
+    """
+    Handles display of team validation page
+
+    :param request:
+    :return: response
+    """
+    from .models import csvDocument, Team
+    from .forms import get_primary_validation_form, get_secondary_validation_form
+    from .helpers import get_best_match, generate_active_form_dict
+    from collections import OrderedDict
+
+    logger = logging.getLogger(__name__)
+
+    fileobj_id = request.session['file_obj_pk']
+    fileobj = csvDocument.objects.get(pk=fileobj_id)
+    uploaded_team_name = fileobj.your_team_name
+    uploaded_season = fileobj.season
+    request.session['season'] = uploaded_season
+    request.session['filename_for_display'] = fileobj.file.name
+
+    primary_form_factory = get_primary_validation_form(Team, 'team_name')
+    secondary_form_factory = get_secondary_validation_form(Team)
+
+    if request.method == 'GET':
+
+        # create dict for ajax (one form, one item)
+        match_dict = OrderedDict()
+        match_pk = get_best_match(Team, uploaded_team_name)
+        if match_pk:
+            matched_team = Team.objects.get(pk=match_pk)
+            match_dict['team_name'] = (matched_team.pk, str(matched_team))
+        else:
+            match_dict['team_name'] = (None, 'No match found')
+
+        request.session['match_dict'] = match_dict
+
+        # if there is no match, jquery will set the secondary form to be the active choice to start
+        # otherwise, the primary form will be the one to start
+
+        request.session['active_form_dict'] = generate_active_form_dict(match_dict)
+
+        primary_form = primary_form_factory()
+        secondary_form = secondary_form_factory()
+
+        return render(request, 'db_output/parse_validate_team.html', {'primary_form': primary_form,
+                                                                      'secondary_form': secondary_form,
+                                                                      'team_name': uploaded_team_name,
+                                                                      'season': uploaded_season,
+                                                                      'filename': request.session[
+                                                                          'filename_for_display']})
+
+    if request.method == 'POST':
+        primary_form = primary_form_factory(request.POST)
+        secondary_form = secondary_form_factory(request.POST)
+
+        # whilst the GET view is active (before we are here in post)
+        # active_form_dict will be updated by ajax to have 1 or 2 depending on which form is active
+
+        active_form_dict = request.session['active_form_dict']
+        for key, value in active_form_dict.items():
+            if value == 1 and primary_form.is_valid():
+                form_data = primary_form.cleaned_data
+                saved_team = Team.objects.get(pk=int(form_data['team_name']))
+                # select2 form returns pk as form data
+                # logger.debug(saved_team)
+
+            elif value == 2 and secondary_form.is_valid():
+                saved_team = secondary_form.save()
+                # logger.debug(saved_team)
+            else:
+                logger.error('active_form_dict malformed or forms not valid')
+                return render(request, 'db_output/parse_validate_team.html', {'primary_form': primary_form,
+                                                                              'secondary_form': secondary_form,
+                                                                              'team_name': uploaded_team_name,
+                                                                              'season': uploaded_season,
+                                                                              'filename': request.session[
+                                                                                  'filename_for_display']})
+
+            request.session['team_obj_pk'] = saved_team.team_ID
+            request.session['active_form_dict'] = None
+            return redirect('parse_validate_opposition')
+
+
+def parse_validate_opposition(request):
+    """
+    handles display of opposition verification
+
+    :param request:
+    :return:
+    """
+    from .forms import get_secondary_validation_form, get_primary_validation_form
+    from .models import Team
+
+    logger = logging.getLogger(__name__)
+
+    primary_form_factory = get_primary_validation_form(Team, 'team_name')
+    secondary_form_factory = get_secondary_validation_form(Team)
+
+    uploaded_season = request.session['season']
+    request.session['match_dict'] = None
+
+    if request.method == 'GET':
+        primary_form = primary_form_factory()
+        secondary_form = secondary_form_factory()
+
+        return render(request, 'db_output/parse_validate_opposition.html', {'primary_form': primary_form,
+                                                                            'secondary_form': secondary_form,
+                                                                            'season': uploaded_season,
+                                                                            'filename': request.session[
+                                                                                'filename_for_display']})
+
+    if request.method == 'POST':
+        primary_form = primary_form_factory(request.POST)
+        secondary_form = secondary_form_factory(request.POST)
+
+        active_form_dict = request.session['active_form_dict']
+        for key, value in active_form_dict.items():
+            if value == 1 and primary_form.is_valid():
+                form_data = primary_form.cleaned_data
+                saved_team = Team.objects.get(pk=int(form_data['team_name']))
+                # select2 form returns pk as form data
+                # logger.debug(saved_team)
+
+            elif value == 2 and secondary_form.is_valid():
+                # todo (lp) some type of check to warn if you're creating a duplicate team
+                saved_team = secondary_form.save()
+                # logger.debug(saved_team)
+            else:
+                logger.error('active_form_dict malformed or forms not valid')
+                return render(request, 'db_output/parse_validate_opposition.html', {'primary_form': primary_form,
+                                                                                    'secondary_form': secondary_form,
+                                                                                    'season': uploaded_season,
+                                                                                    'filename': request.session[
+                                                                                        'filename_for_display']})
+
+            request.session['opposition_obj_pk'] = saved_team.team_ID
+            request.session['active_form_dict'] = None
+            return redirect('parse_validate_player')
 
 
 def parse_validate_player(request):
@@ -111,110 +253,127 @@ def parse_validate_player(request):
     :param request: django request object
     :return: response object
     """
-    # from .models import Player
-    from .forms import ValidationForm, VerifyConfirmForm
-    from .helpers import fetch_match
+    from django.forms import modelformset_factory
+    from django.db.models import Case, When
+    from django.core import serializers
+    from .models import Player
+    from .forms import get_primary_validation_form, get_secondary_validation_form
+    from .helpers import get_best_match, generate_active_form_dict, generate_readable
+    from collections import OrderedDict
+
     logger = logging.getLogger(__name__)
-
-    # FIXME: if you refresh you redo the GET part with no processing
-
-    # TODO (soon): replace radio with select2 search by type modelForm
-
-    # this view should have three branches
-    # 1 - GET
-    # 2 - POST w/ no names remaining
-    # 3 - POST w/ names remaining
 
     player_list = request.session['player_list']
 
-    # Branch 1:
-    if request.method == 'GET':
-        csv_name = player_list.pop()
-        request.session['player_list'] = player_list
-        request.session['prev_csv_name'] = csv_name
+    # generate initial matches
+    matched_pks = []
+    for csv_name in player_list:
+        matched_pks.append(get_best_match(Player, csv_name))
 
-        # these are to store data so that we can do the database operations in the next view (after confirm is pressed)
-        # saving pickled objects to session is EXTREMELY INSECURE if using untrusted session engine (like cookies)
-        # this code here won't change if the session engine ever changes
-        # unpickling can result in arbitrary code execution
-        request.session['matched_to_update'] = []
-        request.session['nonmatched_to_create'] = []
-
-        match = fetch_match(csv_name)
-        name_validation_form = ValidationForm(match=match)
-
-        request.session['conversion_dict'] = {}
-        return render(request, 'db_output/parse_validate_player.html',
-                      context={'form': name_validation_form, 'csv_name': csv_name, 'results': str(player_list)})
-
-    # Branch 2 and 3:
-    if request.method == 'POST':
-
-        nonmatched_to_create = request.session['nonmatched_to_create']
-        matched_to_update = request.session['matched_to_update']
-        csv_name = request.session['prev_csv_name']
-        match = fetch_match(csv_name)
-
-        # Branch 3
-        name_validation_form = ValidationForm(request.POST, match=match)
-        # not supplying match here makes the form set a custom name to required, and then the next line returns False
-        if name_validation_form.is_valid():
-            results = name_validation_form.cleaned_data
-
-            # conversion dict will be { csv_name : actual_player_pk }
-            new_dict = request.session['conversion_dict']
-
-            # this means that if there is no match, regardless of form choice, the custom name provided will be used
-            # if there is no match, the form will require a custom name to be inputted
-            if results['selection'] == 'provided' and match:
-                # find player object based on match, put in pk
-                new_dict[csv_name] = match.player_ID
-                match.csv_names = match.csv_names + ',' + csv_name
-                matched_to_update.append(match.player_ID)
-
-            else:
-                given_name = results['custom_name']
-                # when we create conversion dict from custom names we do not know their pks yet bc no object
-                # that is why conversion dict is empty on this page after a fully new team
-                # this will be written over with new pks in parse_results (after confirmation)
-
-                # new_dict[csv_name] = 'newly added player, ID to be created on confirmation'
-                new_dict[csv_name] = given_name
-                nonmatched_to_create.append((given_name, csv_name))
-
-            request.session['conversion_dict'] = new_dict
-            request.session['nonmatched_to_create'] = nonmatched_to_create
-            request.session['matched_to_update'] = matched_to_update
-
-            # Branch 2:
-            if not player_list:  # if we have looped over everyone
-                to_confirm = []
-                temp_dict = request.session['conversion_dict']
-                for k, v in temp_dict.items():
-                    to_confirm.append((k, v))
-
-                logger.debug('sending to parse_verify')
-                request.session['to_confirm'] = to_confirm
-                return redirect('parse_verify')
-
-            csv_name = player_list.pop()
-            request.session['player_list'] = player_list
-            request.session['prev_csv_name'] = csv_name
-            match = fetch_match(csv_name)
-            name_validation_form = ValidationForm(match=match)
-
-            return render(request, 'db_output/parse_validate_player.html',
-                          context={'form': name_validation_form,
-                                   'csv_name': csv_name,
-                                   'results': str(request.session['conversion_dict'])})
+    # create dict for ajax
+    match_dict = OrderedDict()
+    for i in range(0, len(matched_pks)):
+        if matched_pks[i]:
+            matched_player = Player.objects.get(pk=matched_pks[i])
+            match_dict[i] = (matched_player.pk, str(matched_player))
 
         else:
-            # reload the page with everything as it was if invalid input
-            name_validation_form = ValidationForm(match=match)
-            return render(request, 'db_output/parse_validate_player.html',
-                          context={'form': name_validation_form,
-                                   'csv_name': csv_name,
-                                   'results': 'Data entered was not valid, please retry'})
+            match_dict[i] = (None, 'No match found')
+
+    request.session['match_dict'] = match_dict
+
+    preserved_order = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(matched_pks)])
+    formset_queryset = Player.objects.filter(pk__in=matched_pks).order_by(preserved_order)
+    empty_queryset = Player.objects.none()
+    # only the primary formset will require an actual queryset
+    # the secondary forms will always be blank to start
+    # hence empty queryset and extra=len(player_list)
+    req_extra = len(player_list) - len(formset_queryset)
+
+    primary_formset_factory = modelformset_factory(Player, form=get_primary_validation_form(Player, 'proper_name'),
+                                                   extra=req_extra)
+    secondary_formset_factory = modelformset_factory(Player, form=get_secondary_validation_form(Player),
+                                                     extra=len(player_list))
+
+    if request.method == 'GET':
+        request.session['active_form_dict'] = generate_active_form_dict(match_dict)
+
+        primary_formset = primary_formset_factory(queryset=formset_queryset, prefix='names')
+        secondary_formset = secondary_formset_factory(queryset=empty_queryset, prefix='details')
+
+        return render(request, 'db_output/parse_validate_player.html', context={'player_list': player_list,
+                                                                                'primary_formset': primary_formset,
+                                                                                'secondary_formset': secondary_formset,
+                                                                                'filename': request.session[
+                                                                                    'filename_for_display']})
+
+    if request.method == 'POST':
+        active_form_dict = request.session['active_form_dict']
+
+        primary_formset = primary_formset_factory(request.POST, queryset=formset_queryset, prefix='names')
+        secondary_formset = secondary_formset_factory(request.POST, queryset=empty_queryset, prefix='details')
+
+        new_to_create = []
+        existing_to_update = []
+        to_confirm = []
+
+        # primary_formset will not be valid if there are empty (no match, nothing selected) forms
+        for index, (primary_form, secondary_form) in enumerate(zip(primary_formset, secondary_formset)):
+
+            # find the item at same index as this form as tuple (form_index, prisec)
+            this_active_form = list(active_form_dict.items())[index][1]
+            csv_name = player_list[index]
+
+            if this_active_form == 1 and primary_form.is_valid():
+                this_player = Player.objects.get(pk=int(primary_form.cleaned_data['proper_name']))
+                this_player.add_if_not_blank_or_existing('csv_names', csv_name)
+                # this_player_info = serializers.serialize('json', [this_player])
+                existing_to_update.append((csv_name, this_player.player_ID))
+
+            elif this_active_form == 2 and secondary_form.is_valid():
+                this_player = secondary_form.save(commit=False)
+                this_player.add_if_not_blank_or_existing('csv_names', csv_name)
+                # serialiser expects a list
+                this_player_info = serializers.serialize('json', [this_player])
+                new_to_create.append((csv_name, this_player_info))
+
+            else:
+                logger.error('error in form validation (this_active_form = ' + str(this_active_form) + ')')
+                details = []
+                if secondary_form.is_valid():
+                    warning_string = 'primary form ' + str(index) + ' invalid'
+                    details.append(primary_form.errors)
+                elif primary_form.is_valid():
+                    warning_string = 'secondary form ' + str(index) + ' invalid'
+                    details.append(secondary_form.errors)
+                else:
+                    details.append(primary_form.errors)
+                    details.append(secondary_form.errors)
+                    warning_string = 'neither form valid @ index: ' + str(index)
+
+                logger.warning(details)
+
+                primary_formset = primary_formset_factory(queryset=formset_queryset, prefix='names')
+                secondary_formset = secondary_formset_factory(queryset=empty_queryset, prefix='details')
+
+                return render(request, 'db_output/parse_validate_player.html', context={'warning': warning_string,
+                                                                                        'player_list': player_list,
+                                                                                        'primary_formset': primary_formset,
+                                                                                        'secondary_formset': secondary_formset,
+                                                                                        'filename': request.session[
+                                                                                            'filename_for_display']})
+
+            to_confirm.append((csv_name, generate_readable(this_player)))
+
+        # data for display
+        request.session['to_confirm'] = to_confirm
+        # data for database operations after confirm
+        request.session['existing_to_update'] = existing_to_update
+        request.session['new_to_create'] = new_to_create
+
+        request.session['match_dict'] = None
+
+        return HttpResponseRedirect('parse_verify')
 
 
 def parse_verify(request):
@@ -226,18 +385,28 @@ def parse_verify(request):
     :return: response object
     """
     from .forms import VerifyConfirmForm
+    from .models import Team
     logger = logging.getLogger(__name__)
 
     to_confirm = request.session['to_confirm']
-    # TODO (lp): show ALL data that will be saved to db in humanreadable format
-    # TODO: take in additional information about players
 
     if request.method == 'GET':
-        logger.warning('arrived at verify output via GET')
         verify_form = VerifyConfirmForm()
 
+        season = request.session['season']
+        team_name = Team.objects.get(pk=request.session['team_obj_pk'])
+        try:
+            opp_name = Team.objects.get(pk=request.session['opposition_obj_pk'])
+        except KeyError:
+            opp_name = None
+
         return render(request, 'db_output/parse_verify.html', context={'verification_needed': to_confirm,
-                                                                       'verify_form': verify_form})
+                                                                       'verify_form': verify_form,
+                                                                       'team_name': team_name,
+                                                                       'season': season,
+                                                                       'opp_name': opp_name,
+                                                                       'filename': request.session[
+                                                                           'filename_for_display']})
     elif request.method == 'POST':
         verify_form = VerifyConfirmForm(request.POST)
         if verify_form.is_valid():
@@ -255,63 +424,64 @@ def parse_results(request):
     :param request: request
     :return: response
     """
+    from django.core import serializers
     from .ua_parser import parse
-    from . import models
+    from .models import Player, Team
 
     # TODO (testing) break out logic into more easily testable funcs
 
-    # TODO: control flow into parse_results because we do db work here
     # if not request.referrer == 'parse_verify':
     #     raise (some error that sends us home)
 
     all_players = []
-    for player_pk in request.session['matched_to_update']:
-        p = models.Player.objects.get(pk=player_pk)
-        p.save()
-        all_players.append(p)
-
-    for given_name, csv_name in request.session['nonmatched_to_create']:
-        p = models.Player(proper_name=given_name, csv_names=csv_name)
-        p.save()
-        all_players.append(p)
-        temp_dict = request.session['conversion_dict']
-        temp_dict[csv_name] = p.player_ID
-        request.session['conversion_dict'] = temp_dict
-
     temp_dict = request.session['conversion_dict']
+
+    for csv_name, player_info in request.session['new_to_create']:
+        # deserialise returns a generator, because it expects (and gets) a list
+        # next() returns the first (and only) item
+        p = next(serializers.deserialize('json', player_info)).object
+        p.save()
+        temp_dict[csv_name] = p.player_ID
+        all_players.append(p)
+
+    for csv_name, player_id in request.session['existing_to_update']:
+        p = Player.objects.get(pk=player_id)
+
+        # TODO (lp) - this is being fetched+modified both here and before being saved to the session lists
+        # should probably just do it once and serialise from there
+
+        p.add_if_not_blank_or_existing('csv_names', csv_name)
+
+        p.save()
+        temp_dict[csv_name] = p.player_ID
+        all_players.append(p)
+
     temp_dict['Anonymous'] = -1
     request.session['conversion_dict'] = temp_dict
     # this means that in ua_parser it won't fail when we reach a blank name
-    # handle_check_player will see this do well with it
+    # handle_check_player will see this and do well with it
 
-    # creating the player objects can happen here, and therefore creating the team object is ok
-    # both should be persistent beyond the scope of a single csv, and thus parse call
+    team_obj_pk = request.session['team_obj_pk']
 
-    # TODO: manually validate team names like player names
+    try:
+        opp_pk = request.session['opposition_obj_pk']
+    except KeyError:
+        opp_pk = False
 
-    fileobj = models.csvDocument.objects.get(pk=request.session['file_obj_pk'])
-    team_name = fileobj.your_team_name
-
-    # confirm which players were present in colony v thunder, check against analysis results
-
-    if models.Team.objects.filter(team_name=team_name).exists():
-        team_obj_pk = models.Team.objects.get(team_name=team_name).team_ID  # TODO: handle multiple team matches
-    else:
-        new_team = models.Team(team_name=team_name)
-        new_team.save()
-        team_obj_pk = new_team.team_ID
-
-    this_team = models.Team.objects.get(pk=team_obj_pk)
+    this_team = Team.objects.get(pk=team_obj_pk)
     for player in all_players:
         # establish m2m relationship
         this_team.players.add(player.player_ID)
     this_team.save()
 
+    # TODO (lp): show ALL data that will be saved to db in humanreadable format
+
     parsed_results = parse(request.session['file_obj_pk'], team_obj_pk,
-                           request.session['conversion_dict'], verify=request.session['verify'])
+                           request.session['conversion_dict'], verify=request.session['verify'],
+                           opposition_pk=opp_pk)
     # currently this just gives us a success indicating string
 
-    return render(request, 'db_output/parse_select.html', context={'parsed_results': parsed_results})
+    return render(request, 'db_output/parse_results.html', context={'parsed_results': parsed_results})
 
 
 def analysis_select(request):
@@ -323,7 +493,7 @@ def analysis_select(request):
     :return: response
     """
     from .forms import AnalysisForm
-    from .analysis import get_all_analyses, null_analysis, second_null_analysis
+    from .analysis import get_all_analyses
 
     # TODO (feat): select all games by tournament
 

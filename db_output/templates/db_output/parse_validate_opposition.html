@@ -1,0 +1,73 @@
+{% extends 'db_output/base_bootstrap.html' %}
+{% if extra_head %} {{ extra_head }} {% endif %}
+{% load static %} {% load looping_extras %}
+
+<!-- select2 css -->
+{% block extra_head %}
+    {{ primary_form.media.css }}
+{% endblock %}
+
+<!-- jquery scripts -->
+{% block extra_scripts %}<script src="{% static 'validation_jquery.js' %}"></script>{% endblock %}
+
+
+{% block title %} Parse Validate Opposition {% endblock %}
+
+{% block content %}
+
+<h4>Opposition Validation</h4>
+{% if filename %} Filename: <b> {{ filename }} </b><br> {% endif %}
+
+If possible, please select a match from our database using the provided form. <br>
+If no match is available, please uncheck the box and enter the new opposition details on the right.<br>
+<br>
+Please do not create a new opposition each season.<br>
+This game was recorded as occurring during: <b>{{ season }}</b><br>
+
+<p></p>
+<form method='post' enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ primary_form.media.js }}
+
+    <!--
+    {{ primary_form.errors }}
+    {{ secondary_forms.errors }}
+    -->
+
+    <table class='table'>
+        <tr><th scope="col">Team Selection</th></tr>
+
+        <td>
+            {{ primary_form.selected.label_tag }} {{ primary_form.selected }}<p>
+
+            <div id="primary_form_div-0" class="Team"><p>{{ primary_form.team_name }}</p>
+                {{ primary_form.errors }}
+                <div id="primary_form_extra_details-0"><!-- jquery puts player info here --></div>
+            </div>
+
+            <div id="secondary_form_div-0" class="Team">
+                <table>
+                {% for field in secondary_form.visible_fields %}
+                    <tr>
+                        <td>{{ field.label_tag }}</td>
+                        <td>{{ field }}
+                    </tr>
+                {% endfor %}
+                </table>
+                {{ secondary_form.errors }}
+            </div>
+        </td>
+
+    </table>
+
+    <button type="submit">Confirm</button>
+</form>
+
+<!-- printed results below -->
+
+{% if results %}
+<p>
+{{ results }}
+{% endif %}
+
+{% endblock %}

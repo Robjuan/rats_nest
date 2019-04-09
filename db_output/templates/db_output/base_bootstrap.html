@@ -17,6 +17,7 @@
 
     <!-- for django_select2 css, load jquery first up -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+
     <!-- extra_head should be here: -->
     {% block extra_head %}{% endblock %}
 
@@ -80,7 +81,7 @@
 
 
     <!-- Bootstrap core JavaScript -->
-    <script src="{% static 'bootstrap_css/vendor/jquery/jquery.min.js' %}"></script>
+    <!-- <script src="{% static 'bootstrap_css/vendor/jquery/jquery.min.js' %}"></script> -->
     <script src="{% static 'bootstrap_css/vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
 
     <!-- Menu Toggle Script -->
@@ -90,6 +91,9 @@
         $("#wrapper").toggleClass("toggled");
     });
     </script>
+
+    <!-- extra_scripts block here -->
+    {% block extra_scripts %}{% endblock %}
 
 </body>
 </html>

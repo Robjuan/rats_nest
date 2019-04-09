@@ -44,7 +44,7 @@ def descriptive_offence_team_analysis(*args, **kwargs):
     team = kwargs.pop('team')
     logger = logging.getLogger(__name__)
 
-    from .analysis_helpers import completion_pct_by_player, goals_by_player, points_played_by_player
+    from .analysis_descriptive import completion_pct_by_player, goals_by_player, points_played_by_player
 
     decimal_places = 2
 
@@ -63,19 +63,71 @@ def descriptive_offence_team_analysis(*args, **kwargs):
     for stat_row in stat_list:
         if isinstance(stat_row[1], str):  # skip header row
             continue
-        print(stat_row)
         cum_goals += stat_row[1]
         cum_throws += stat_row[3]
         cum_turns += (stat_row[2]/100)*stat_row[3]
 
     cum_pct = round((cum_turns / cum_throws) * 100, decimal_places)
+    # this will throw an exception if your team did not have a single throw
 
     stat_list.append(('Cumulatively', cum_goals, cum_pct, cum_throws, 'n/a'))
 
     return stat_list, 'table'
 
 
-def analytic_possession_analysis(*args, **kwargs):
+def team_efficiency(*args, **kwargs):
+    from .models import Point, Possession, Event
+
+    games = kwargs.pop('games')
+    team = kwargs.pop('team')
+
+    # passes per goal (including the assist)
+
+    output_data = [('Game','Passes','Goals')]
+
+    for game in games:
+        if game.opposing_team:
+            intro = "Against " + str(game.opposing_team)
+        else:
+            intro = "In game " + str(game)
+
+        # todo: replace this loop with a complex query
+        for point in Point.objects.filter(game=game):
+            point_events_pks = []
+            passes = 0
+            goals = 0
+            for possession in Possession.objects.filter(point=point):
+                for event in Event.objects.filter(possession=possession):
+                    point_events_pks.append(event.event_ID)
+
+            point_events = Event.objects.filter(pk__in=point_events_pks)
+            if point_events.last().event_type == 'Defence':  # we got scored on
+                continue
+            else:  # we scored
+                for event in point_events:
+                    if (event.action == 'Catch' or event.action == 'Goal') and (event.event_type == 'Offense'):
+                        passes += 1
+                    if event.action == 'Goal' and event.event_type == 'Offense':
+                        goals += 1
+
+                output_data.append((intro, passes, goals))
+                # not summing these at all
+
+    return output_data, 'table'
+
+
+
+
+
+
+
+
+
+
+    return
+
+
+def placeholder_analytic_possession_analysis(*args, **kwargs):
     """
     To calculate efficiency and effectiveness per-possession for a team across given games
 
@@ -106,19 +158,3 @@ def analytic_possession_analysis(*args, **kwargs):
         pass
 
     return 'first null, team: ' + str(team), 'list'
-
-
-def null_analysis(*args, **kwargs):
-    games = kwargs.pop('games')
-    team = kwargs.pop('team')
-
-    return 'first null, team: ' + str(team), 'list'
-
-
-def second_null_analysis(*args, **kwargs):
-    games = kwargs.pop('games')
-    team = kwargs.pop('team')
-
-    # do even cooler shit
-
-    return 'second null, game: ' + str(games), 'list'

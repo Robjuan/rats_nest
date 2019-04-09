@@ -77,7 +77,7 @@ def check_conversion_dict(conversion_dict, file_obj_pk):
 # Elapsed Time (sec)
 
 
-def parse(file_obj_pk, team_obj_pk, conversion_dict, verify=True):
+def parse(file_obj_pk, team_obj_pk, conversion_dict, verify=True, opposition_pk=None):
     """
     The parse function. Central logic of converting UA csv to database objects.
 
@@ -85,6 +85,7 @@ def parse(file_obj_pk, team_obj_pk, conversion_dict, verify=True):
     :param team_obj_pk: pk of the team object this game is about
     :param conversion_dict: dict in form {csv_name: pk} to convert raw data to pks for parse
     :param verify: should this game be marked as verified on completion, defaults True
+    :param opposition_pk: pk of the opposing Team object
     :return: TODO: have parse return summary of everything saved to db
     """
     logger = logging.getLogger(__name__)
@@ -109,8 +110,10 @@ def parse(file_obj_pk, team_obj_pk, conversion_dict, verify=True):
     # Player 0,Player 1,Player 2,Player 3,Player 4,Player 5,Player 6,Player 7,Player 8,Player 9,Player 10,Player 11,
     # Player 12,Player 13,Player 14,Player 15,Player 16,Player 17,Player 18,Player 19,Player 20,Player 21,Player 22,
     # Player 23,Player 24,Player 25,Player 26,Player 27,
+    #
     # *** below are unused
-    # Begin Area,Begin X,Begin Y,End Area,End X,End Y,Distance Unit of Measure,Absolute Distance,Lateral Distance,Toward Our Goal Distance
+    # Begin Area,Begin X,Begin Y,End Area,End X,End Y,
+    # Distance Unit of Measure,Absolute Distance,Lateral Distance,Toward Our Goal Distance
 
     indexed_lines = list(enumerate(csv_reader))  # i wonder if this is memory inefficient?
     # indexed_lines[index] returns (index,line) tuple
@@ -128,14 +131,11 @@ def parse(file_obj_pk, team_obj_pk, conversion_dict, verify=True):
             this_game.verified = verify
             this_game.save()
 
-            # TODO (feat): combine stats - link by fk first
-            # how to set opposing game details and stuff
-            # manually subsequently?
-            # line['Opponent']
-            # check if an appropriate Opponent object exists
-            # if not, create it and insert. if yes, insert.
+            # TODO (soon): combine stats - link by fk first
+            if opposition_pk:
+                this_game.opposing_team = models.Team.objects.get(pk=opposition_pk)
 
-            this_point = handle_new_point(this_game.game_ID, line)
+            this_point = handle_new_point(this_game.game_ID, line, conversion_dict)
             this_possession = handle_new_possession(this_point.point_ID)
 
         # block 2: checks for new point or new possession
@@ -152,7 +152,9 @@ def parse(file_obj_pk, team_obj_pk, conversion_dict, verify=True):
                 this_point.save()
                 this_possession.save()
 
-                this_point = handle_new_point(this_game.game_ID, line)  # will never be half at end of first point
+                # will never be half at end of first point
+
+                this_point = handle_new_point(this_game.game_ID, line, conversion_dict)
                 this_possession = handle_new_possession(this_point.point_ID)
 
             elif line['Event Type'] != indexed_lines[index - 1][1]['Event Type']:  # new possession but not new point
@@ -175,20 +177,7 @@ def parse(file_obj_pk, team_obj_pk, conversion_dict, verify=True):
         #   either:
         #       Goal, Throwaway
 
-        # block 3a: check + store players
-
-        player_col_list = []
-        for x in range(0, 27):
-            col = 'Player ' + str(x)
-            player_col_list.append(col)
-
         this_event = handle_new_event(this_possession.possession_ID, line)
-
-        for player_col in player_col_list:
-            if line[player_col]:
-                player = handle_check_player(conversion_dict[line[player_col]])
-                this_event.players.add(player)  # this is building the manytomany
-                this_event.save()
 
         if line['Defender']:
             this_event.defender = handle_check_player(conversion_dict[line['Defender']])
@@ -197,8 +186,6 @@ def parse(file_obj_pk, team_obj_pk, conversion_dict, verify=True):
             this_event.receiver = handle_check_player(conversion_dict[line['Receiver']])
 
         this_event.save()
-
-        # block 3b: check + process based on action
 
         this_event.action = line['Action']
         this_event.event_type = line['Event Type']
@@ -226,6 +213,14 @@ def parse(file_obj_pk, team_obj_pk, conversion_dict, verify=True):
 
 
 # handle_x functions always return the object they created/found
+def handle_check_player(player_pk):
+    # check if a Player object for this player exists
+    # return None if the "pk" for Anonymous is passed
+    if player_pk == -1:  # Anonymous
+        return None
+    else:
+        return models.Player.objects.get(pk=player_pk)
+
 
 def handle_new_event(possession_ID, line):
     this_event = models.Event()
@@ -239,8 +234,8 @@ def handle_new_event(possession_ID, line):
 
 def handle_new_pull(player_ID, point_ID, hangtime=None):
     this_pull = models.Pull()
-    this_pull.player = models.Player.objects.get(pk=player_ID)
-    this_pull.point = models.Point.objects.get(pk=point_ID)
+    this_pull.player = handle_check_player(player_ID)
+    this_pull.point = models.Point.objects.get(pk=point_ID)  # this assumes point will always exist before pull
     if hangtime:
         this_pull.hangtime = hangtime
 
@@ -248,7 +243,7 @@ def handle_new_pull(player_ID, point_ID, hangtime=None):
     return this_pull
 
 
-def handle_new_point(game_ID, line, halfatend=False):
+def handle_new_point(game_ID, line, conversion_dict, halfatend=False):
     this_point = models.Point()
     this_point.game = models.Game.objects.get(pk=game_ID)
     this_point.point_elapsed_seconds = line['Point Elapsed Seconds']
@@ -256,6 +251,18 @@ def handle_new_point(game_ID, line, halfatend=False):
     this_point.ourscore_EOP = line['Our Score - End of Point']
     this_point.theirscore_EOP = line['Their Score - End of Point']
     this_point.halfatend = halfatend
+    this_point.save()
+
+    # store players
+    player_col_list = []
+    for x in range(0, 27):
+        col = 'Player ' + str(x)
+        player_col_list.append(col)
+
+    for player_col in player_col_list:
+        if line[player_col]:
+            player = handle_check_player(conversion_dict[line[player_col]])
+            this_point.players.add(player)  # this is building the manytomany
 
     this_point.save()
     return this_point
@@ -268,11 +275,3 @@ def handle_new_possession(point_ID):
     this_possession.save()
     return this_possession
 
-
-def handle_check_player(player_pk):
-    # check if a Player object for this player exists
-    # return None if the "pk" for Anonymous is passed
-    if player_pk == -1:  # Anonymous
-        return None
-    else:
-        return models.Player.objects.get(pk=player_pk)

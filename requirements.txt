@@ -5,4 +5,6 @@ psycopg2-binary
 dj-database-url
 whitenoise
 django_select2
-django-mptt
+python-binary-memcached
+django-bmemcached
+pylibmc

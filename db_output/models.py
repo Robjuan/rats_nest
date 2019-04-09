@@ -1,4 +1,5 @@
 from django.db import models
+from .managers import PointQuerySet, PossessionQuerySet, EventQuerySet
 
 
 # document upload - not for stats analysis
@@ -10,31 +11,32 @@ class csvDocument(models.Model):
     uploaded_at = models.DateTimeField(auto_now_add=True)
     season = models.IntegerField()
 
-    parsed = models.BooleanField(null=True)  # FIXME (Current): is false null?
+    parsed = models.BooleanField(null=True)
 
     def __str__(self):
         return 'csv: ' + str(self.your_team_name) + ', uploaded: ' + str(self.uploaded_at)[5:19] + ', filename: ' + \
                str(self.file.name)
 
-# statistic storage
 
+# statistic storage
 
 class Player(models.Model):
     player_ID = models.AutoField(primary_key=True)
 
     # non-key
     proper_name = models.CharField(max_length=30)
+
+    dob = models.DateField(max_length=8,
+                           blank=True,
+                           null=True)
     hometown = models.CharField(max_length=30,
                                 blank=True)
     position = models.CharField(max_length=30,
                                 blank=True)
-
     nickname = models.CharField(max_length=255,
                                 blank=True)
-
     numbers = models.CharField(max_length=255,
                                blank=True)
-
     csv_names = models.CharField(max_length=255,
                                  blank=True)  # comma separated values in a string
 
@@ -42,10 +44,29 @@ class Player(models.Model):
         ordering = ('proper_name',)
 
     def __str__(self):
-        return 'Player - [id:' + str(self.player_ID) + '] ' + str(self.proper_name)
+        return str(self.proper_name) + ' [P id:' + str(self.player_ID) + ']'
+
+    def add_if_not_blank_or_existing(self, attr, value):
+        now = getattr(self, attr)
+
+        if now and value not in now:
+            new = now + ',' + value
+
+        elif now and value in now:
+            return None
+
+        else:  # if not now
+            new = value
+
+        setattr(self, attr, new)
 
 
 class Team(models.Model):
+    DIVISION_CHOICES = (
+        ('W', "Womens"),
+        ('M', "Mens / Opens"),
+        ('X', "Mixed")
+    )
     team_ID = models.AutoField(primary_key=True)
     players = models.ManyToManyField(Player)
     # ManyToMany doesn't take on_delete
@@ -54,8 +75,12 @@ class Team(models.Model):
     team_name = models.CharField(max_length=30)
     origin = models.CharField(max_length=30,
                               blank=True)
-    division = models.CharField(max_length=30,
-                                blank=True)
+    gender_division = models.CharField(max_length=30,
+                                       choices=DIVISION_CHOICES)
+
+    age_division = models.CharField(max_length=30,
+                                    blank=True,
+                                    null=True)
 
     class Meta:
         ordering = ('team_name',)
@@ -71,7 +96,6 @@ class Game(models.Model):
     # if we only know the name
 
     # SET_NULL means that if you delete the referenced team, this just goes to null
-    # TODO (soon): get opposing team info going so we can show you who the game is against
     opposing_team = models.ForeignKey(Team,
                                       on_delete=models.SET_NULL,
                                       blank=True,
@@ -94,6 +118,8 @@ class Game(models.Model):
                                 blank=True)
     conditions = models.CharField(max_length=30,
                                   blank=True)
+    notes = models.CharField(max_length=255,
+                             blank=True)
 
     # verification is just an extra flag for us to show what is legit data - will mostly be on
     verified = models.BooleanField()
@@ -102,7 +128,14 @@ class Game(models.Model):
         ordering = ('datetime',)
 
     def __str__(self):
-        return 'Game - [id:' + str(self.game_ID) + '] ' + str(self.tournament_name) + ' @ ' + str(self.datetime)[:19]
+        if self.opposing_team:
+            return '[G '+str(self.game_ID)+']: ' +\
+                   str(self.team.team_name) + ' vs ' + str(self.opposing_team.team_name) +\
+                   ' @ ' + str(self.tournament_name)
+
+        else:
+            return '[G '+str(self.game_ID)+']: ' + str(self.team.team_name) + ' @ ' + str(self.tournament_name) +\
+                   ' @ ' + str(self.datetime)[:19]
 
 
 class Point(models.Model):
@@ -111,6 +144,9 @@ class Point(models.Model):
     game = models.ForeignKey(Game,
                              models.CASCADE)
 
+    players = models.ManyToManyField(Player,
+                                     related_name='players_on_field')
+
     # non-key
     point_elapsed_seconds = models.IntegerField()
     startingfence = models.CharField(max_length=30)  # not 100% settled on this
@@ -118,33 +154,21 @@ class Point(models.Model):
     theirscore_EOP = models.IntegerField()
     halfatend = models.BooleanField(default=False)
 
+    # manager
+    objects = PointQuerySet.as_manager()
+
     def __str__(self):
-        return 'Point - [id:' + str(self.point_ID) + '] game:' + str(self.game) + \
+        return 'Point - [id:' + str(self.point_ID) + '] game: ' + str(self.game) + \
                ',[us|them]: [' + str(self.ourscore_EOP) + '|' + str(self.theirscore_EOP) + ']'
-
-
-class Pull(models.Model):
-    pull_ID = models.AutoField(primary_key=True)
-    # PROTECT will error if the player is deleted when pulls exist
-    player = models.ForeignKey(Player,
-                               on_delete=models.PROTECT)
-    point = models.ForeignKey(Point,
-                              on_delete=models.CASCADE)
-
-    # non-key
-    hangtime = models.DecimalField(null=True,
-                                   decimal_places=2,
-                                   max_digits=4)
-
-    def __str__(self):
-        return 'Pull - [id:' + str(self.pull_ID) + '] player:' + str(self.player)
 
 
 class Possession(models.Model):
     possession_ID = models.AutoField(primary_key=True)
     point = models.ForeignKey(Point, on_delete=models.CASCADE)
-
     # if the point is deleted, delete relevant possessions
+
+    # manager
+    objects = PossessionQuerySet.as_manager()
 
     def __str__(self):
         return 'Possession - [id:' + str(self.possession_ID) + ']'
@@ -156,8 +180,7 @@ class Event(models.Model):
 
     possession = models.ForeignKey(Possession,
                                    on_delete=models.CASCADE)
-    players = models.ManyToManyField(Player,
-                                     related_name='players_onfield')
+
     # if the possession is deleted, delete relevant events
     passer = models.ForeignKey(Player,
                                on_delete=models.PROTECT,
@@ -179,5 +202,26 @@ class Event(models.Model):
     action = models.CharField(max_length=30)
     elapsedtime = models.IntegerField()
 
+    # manager
+    objects = EventQuerySet.as_manager()
+
     def __str__(self):
         return 'Event - [id:' + str(self.event_ID) + ']'
+
+
+class Pull(models.Model):
+    pull_ID = models.AutoField(primary_key=True)
+    # PROTECT will error if the player is deleted when pulls exist
+    player = models.ForeignKey(Player,
+                               on_delete=models.PROTECT,
+                               null=True)  # anonymous pulls happen # TODO (lp) a way to still link these to the team
+    point = models.ForeignKey(Point,
+                              on_delete=models.CASCADE)
+
+    # non-key
+    hangtime = models.DecimalField(null=True,
+                                   decimal_places=2,
+                                   max_digits=4)
+
+    def __str__(self):
+        return 'Pull - [id:' + str(self.pull_ID) + '] player: ' + str(self.player)

@@ -7,16 +7,36 @@
 
     {% if verification_needed %}
 
-        <h3> The following conversion dictionary was generated based on your inputs.</h3><p>
-        <h4>Please examine it as correct and verify that this information is correct and true.<p>
-            Do not verify test data.</p></h4><br>
+        <h3> The following validation data was generated based on your inputs.</h3><p>
+        Please examine it as correct and verify that this information is correct and true.<br>
+        New players (player_ID = None) will have a player ID created on confirmation.<br><p>
+        Do not verify test data.<br><p>
 
-        <table><b>Name from CSV, Player ID</b><br>
+        <h4> Game Information: </h4>
 
-        {% for player in verification_needed %}
-            <tr>{{ player }}<br></tr>
-        {% endfor %}
-        </table><br>
+        {% if filename %} Filename: <b> {{ filename }} </b><br> {% endif %}
+        Team: <b>{{ team_name }}</b> <br>
+        {% if opp_name %} Opposition: <b>{{ opp_name }}</b> <br> {% endif %}
+        Season: <b>{{ season }}</b> <br>
+
+        <table class="table">
+            <tr><th scope="col">Name from CSV</th><th scope="col">Player Information</th></tr>
+            {% for row in verification_needed %}
+            <tr>
+                {% for col in row %}
+                    <td>
+                        {% if forloop.first %}
+                            {{ col }}
+                        {% else %}
+                            {% for key, value in col.items %}
+                                {{ key }}: {{ value }}<br>
+                            {% endfor %}
+                        {% endif %}
+                    </td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </table>
 
     {% endif %}
 
@@ -27,11 +47,9 @@
             <button type="submit">Confirm</button>
         </form>
     {% endif %}
-
+        <p></p>
         <p>
-        <form action="{% url 'parse_select' %}">
-            <button type="submit">Cancel</button>
-        </form>
-
+        <input type=button value="Back" onClick="onClick=window.history.back();return false;">
+        </p>
 {% endblock %}
 

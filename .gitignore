@@ -9,10 +9,12 @@
 # pycharm files
 *.xml
 *.iml
+*.patch
 
 #environment specific
 .env
 env/
+.env*
 
 # raw stats
 *.csv

@@ -7,6 +7,11 @@ See TODO / FIXME in code. Pycharm will sort these in the bottom left.
 #rob local psql installed in:
 rob/PostgreSQL/pg11/bin/psql
 
+#memcached local installed in:
+usr/local/opt/memcached/bin/memcached
+
+# requires libmemcached to be installed (and running) for local cache
+
 Overarching design concerns/thoughts:
 
 # is it too linear? 
@@ -26,4 +31,7 @@ after uploading a new csv, fetching works
 before that, no fetch works??
 -- something to do with db sleeping?
 
+
+SESSION DATA - do i need to be tacking what data is left in the session?
+clean the session?
 

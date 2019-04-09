@@ -18,6 +18,7 @@ https://docs.djangoproject.com/en/2.1/ref/settings/
 """
 
 import os, django_heroku
+#import urlparse, json
 
 #https://docs.djangoproject.com/en/2.1/howto/deployment/checklist/
 
@@ -47,12 +48,11 @@ INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
-    'django.contrib.sessions',
+    'django.contrib.sessions',  # default is database-backed
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
     'django_select2',
-    'mptt',
 
     'db_output'
 ]
@@ -60,7 +60,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
 
-    'whitenoise.middleware.WhiteNoiseMiddleware', # for serving static files
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # for serving static files
 
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
