@@ -44,14 +44,20 @@ class Player(models.Model):
         ordering = ('proper_name',)
 
     def __str__(self):
-        return str(self.proper_name) + ' [P id: ' + str(self.player_ID) + ']'
+        return str(self.proper_name) + ' [P id:' + str(self.player_ID) + ']'
 
     def add_if_not_blank_or_existing(self, attr, value):
         now = getattr(self, attr)
+
         if now and value not in now:
             new = now + ',' + value
-        else:
-            new = now
+
+        elif now and value in now:
+            return None
+
+        else:  # if not now
+            new = value
+
         setattr(self, attr, new)
 
 
@@ -90,7 +96,6 @@ class Game(models.Model):
     # if we only know the name
 
     # SET_NULL means that if you delete the referenced team, this just goes to null
-    # TODO (now): get opposing team info going so we can show you who the game is against
     opposing_team = models.ForeignKey(Team,
                                       on_delete=models.SET_NULL,
                                       blank=True,
@@ -153,7 +158,7 @@ class Point(models.Model):
     objects = PointQuerySet.as_manager()
 
     def __str__(self):
-        return 'Point - [id:' + str(self.point_ID) + '] game:' + str(self.game) + \
+        return 'Point - [id:' + str(self.point_ID) + '] game: ' + str(self.game) + \
                ',[us|them]: [' + str(self.ourscore_EOP) + '|' + str(self.theirscore_EOP) + ']'
 
 
@@ -208,7 +213,8 @@ class Pull(models.Model):
     pull_ID = models.AutoField(primary_key=True)
     # PROTECT will error if the player is deleted when pulls exist
     player = models.ForeignKey(Player,
-                               on_delete=models.PROTECT)
+                               on_delete=models.PROTECT,
+                               null=True)  # anonymous pulls happen # TODO (lp) a way to still link these to the team
     point = models.ForeignKey(Point,
                               on_delete=models.CASCADE)
 
@@ -218,4 +224,4 @@ class Pull(models.Model):
                                    max_digits=4)
 
     def __str__(self):
-        return 'Pull - [id:' + str(self.pull_ID) + '] player:' + str(self.player)
+        return 'Pull - [id:' + str(self.pull_ID) + '] player: ' + str(self.player)

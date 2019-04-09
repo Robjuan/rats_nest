@@ -4,7 +4,7 @@
 
 <!-- select2 css -->
 {% block extra_head %}
-    {{ name_formset.1.media.css }}
+    {{ primary_formset.1.media.css }}
 {% endblock %}
 
 <!-- jquery scripts -->
@@ -14,10 +14,14 @@
 
 {% block content %}
 
-<h3> Please validate each player (from uploaded csv) against a Player in the database.</h3>
-<p>If the data shown are correct and complete, please leave the checkbox ticked and continue.<br>
-If the data are incomplete or incorrect, please make the appropriate changes and continue.<br>
-    If there is no appropriate match for the player, please uncheck the box and fill out all new information.<br></p>
+<h3> Player Validation </h3>
+{% if filename %} Filename: <b> {{ filename }} </b><br> {% endif %}
+
+ Please validate each player (from uploaded csv) against a Player in the database.<p>
+
+Check each player currently matched and continue.<br>
+If the player currently matched is incorrect, please search for a different player in our database.<br>
+If there is no appropriate match for the player, please check the custom box and fill out all new information.<br><p>
 
 {% if warning %}<div class='alert alert-danger'>{{ warning }}</div>{% endif %}
 
@@ -26,24 +30,47 @@ If the data are incomplete or incorrect, please make the appropriate changes and
 <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
 
-    {{ name_formset.management_form }}
-    {{ detail_formset.management_form }}
+    {{ primary_formset.management_form }}
+    {{ secondary_formset.management_form }}
 
-    {{ name_formset.0.media.js }}
+    {{ primary_formset.0.media.js }}
 
     <table class='table'>
 
-        <tr><th scope="col">Name in CSV</th><th scope="col">Database Match</th><th scope="col">New Player/Extra Detail</th></tr>
+        <tr><th scope="col">Name in CSV</th><th scope="col">Player Validation</th>
 
         {% for name in player_list %}
         <tr>
-            <td> {{ name }}</td>
+            <td>{{ name }}</td>
 
-            {% index name_formset forloop.counter0 as name_form %}
-            <td>{{ name_form.as_p }} </td>
+            <td>
+                {% index primary_formset forloop.counter0 as primary_form %}
+                {{ primary_form.selected.label_tag }} {{ primary_form.selected }}
+                <div id="primary_form_div-{{ forloop.counter0 }}"><p>{{ primary_form.proper_name }}</p>
+                    {{ primary_form.errors }}
+                    <div id="primary_form_extra_details-{{ forloop.counter0 }}"><!-- jquery puts player info here --></div>
+                    {% for field in primary_form.hidden_fields %}
+                        {{ field }}
+                    {% endfor %}
+                </div>
 
-            {% index detail_formset forloop.counter0 as detail_form %}
-            <td>{{ detail_form.as_p }} </td> <!-- TODO (lp): align fields -->
+                {% index secondary_formset forloop.counter0 as secondary_form %}
+                <div id="secondary_form_div-{{ forloop.counter0}}">
+                    <table>
+                    {% for field in secondary_form.visible_fields %}
+                        <tr>
+                            <td>{{ field.label_tag }}</td>
+                            <td>{{ field }}</td>
+                        </tr>
+                    {% endfor %}
+                    {% for field in secondary_form.hidden_fields %}
+                        {{ field }}
+                    {% endfor %}
+                    </table>
+                    {{ secondary_form.errors }}
+                </div>
+            </td>
+
         </tr>
         {% endfor %}
 

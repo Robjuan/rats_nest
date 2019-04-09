@@ -7,10 +7,17 @@
 
     {% if verification_needed %}
 
-        <h3> The following player validation data was generated based on your inputs.</h3><p></p>
-        <h4>Please examine it as correct and verify that this information is correct and true.<p></p>
-            New players (player_ID = None) will have a player ID created on confirmation.<br><p></p>
-        Do not verify test data.<p></p></h4><br>
+        <h3> The following validation data was generated based on your inputs.</h3><p>
+        Please examine it as correct and verify that this information is correct and true.<br>
+        New players (player_ID = None) will have a player ID created on confirmation.<br><p>
+        Do not verify test data.<br><p>
+
+        <h4> Game Information: </h4>
+
+        {% if filename %} Filename: <b> {{ filename }} </b><br> {% endif %}
+        Team: <b>{{ team_name }}</b> <br>
+        {% if opp_name %} Opposition: <b>{{ opp_name }}</b> <br> {% endif %}
+        Season: <b>{{ season }}</b> <br>
 
         <table class="table">
             <tr><th scope="col">Name from CSV</th><th scope="col">Player Information</th></tr>
@@ -22,7 +29,7 @@
                             {{ col }}
                         {% else %}
                             {% for key, value in col.items %}
-                                {{ key }} : {{ value }}<br>
+                                {{ key }}: {{ value }}<br>
                             {% endfor %}
                         {% endif %}
                     </td>

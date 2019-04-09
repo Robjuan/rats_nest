@@ -30,3 +30,8 @@ REMOTE ONLY ISSUES (usually storage/db related)
 after uploading a new csv, fetching works
 before that, no fetch works??
 -- something to do with db sleeping?
+
+
+SESSION DATA - do i need to be tacking what data is left in the session?
+clean the session?
+

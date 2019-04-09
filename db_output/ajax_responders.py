@@ -2,70 +2,102 @@ import logging
 from django.http import JsonResponse
 
 
+def set_extra_details(request):
+    """
+    used to display the details of the selected object in a secondary div
+
+    :param request: POST containing a str modeltype and int selected_pk
+    :return: json containing all info of the model instance with pk = selecte_pk
+    """
+    import json
+    from .models import Player, Team
+
+    logger = logging.getLogger(__name__)
+
+    modeltype = request.POST['modeltype']
+    selected_pk = request.POST['selected_pk']
+
+    if modeltype == 'Player':
+        obj = Player.objects.get(pk=selected_pk)
+    elif modeltype == 'Team':
+        obj = Team.objects.get(pk=selected_pk)
+    else:
+        logger.error('only Team and Player supported as modeltypes')
+        return JsonResponse({'success': False})
+
+    infodict = {}
+    for field in obj._meta.fields:
+        infodict[field.name] = str(getattr(obj, field.name))
+
+    # does this json dump support datetime?
+    # does this need to be stringified?
+    infojson = json.dumps(infodict)
+
+    return JsonResponse({'success': True,
+                         'infojson': infojson})
+
+
+def set_active_form(request):
+    """
+    keeps the django session up to date on which form is active in validation
+
+    expects a jsonified dict called 'json_request_dict'
+
+    :param request:
+    :return:
+    """
+    import json
+    from collections import OrderedDict
+    logger = logging.getLogger(__name__)
+
+    # fetch dict of forms (as indices) to update from jquery
+    # (dict will most likely be one item long)
+    try:
+        request_dict = json.loads(request.POST['json_request_dict'])
+    except KeyError:
+        logger.error('"json_request_dict" not found in ajax request')
+        return JsonResponse({'success': False})
+
+    # get current session data or creat if required
+    active_form_dict = request.session['active_form_dict'] or OrderedDict()
+
+    # add all k:v pairs from request into current session data
+    for key, value in request_dict.items():
+        active_form_dict[key] = value
+
+    request.session['active_form_dict'] = active_form_dict
+
+    return JsonResponse({'success': True})
+
+
 def get_initial_match(request):
     """
-    called only by ajax - validation_jquery.js
-    FOR USE WITH FORMSETS ONLY
+    gets match for any given match_key (if exists)
+    expects 'match_key' in request.POST
 
     :param request:
     :return: json
     """
+    logger = logging.getLogger(__name__)
 
-    # check that the dict has been prepared by the view
-    if 'match_dict' in request.session:
-        match_dict = request.session['match_dict']
-    else:
-        return JsonResponse({'success': False})
+    # check that the dict has been prepared by the view - fail gracefully if not
+    if 'match_dict' not in request.session:
+        logger.error('match_dict not found in session data')
+        return JsonResponse({'success': False,
+                             'warning': 'match_dict not found in session data'})
 
-    # check that the key given to us by ajax works
-    if request.POST['match_key'] in match_dict:
+    match_dict = request.session['match_dict']
+
+    # check our key against the dict
+    try:
         match_id, match_text = match_dict[request.POST['match_key']]
-    else:
-        return JsonResponse({'success': False})
+
+    # KeyError is when no match exists
+    # TypeError is when dict = None or empty
+    except (KeyError, TypeError):
+        match_id = False
+        match_text = 'No match found'
 
     return JsonResponse({'success': True,
                          'match_text': match_text,
                          'match_id': match_id})
-
-
-def update_details(request):
-    """
-    called only by ajax - validation_jquery.js
-
-    :param request:
-    :return: json
-    """
-    from django.apps import apps
-    import json
-
-    logger = logging.getLogger(__name__)
-
-    form_class_string = request.POST['form_class']
-    selected_pk = request.POST['selection_data']
-
-    # make the selected_pk available to the view function
-    request.session['selected_pk'] = selected_pk
-
-    field_dict = json.loads(request.POST['json_field_dict'])
-
-    # field dict is { field_id : field_name }
-    # where field_id is the fully formed object id
-    # and field_name is the corresponding field in the model
-
-    form_class = apps.get_model('db_output', form_class_string)
-    selected_object = form_class.objects.get(pk=selected_pk)
-
-    field_data = {}
-    for field_id, field_name in field_dict.items():
-        if hasattr(selected_object, field_name):
-            field_data[field_id] = getattr(selected_object, field_name)
-        else:
-            logger.warning(str(selected_object) + ' has no attr ' + str(field_name) + ', failing ajax.')
-            return JsonResponse({'success': False})
-
-    # field data is dict { field_id : value }
-    # where field_id is the (fully formed) object id
-    # and data is the val to set
-
-    return JsonResponse({'field_data': field_data,
-                         'success': True})

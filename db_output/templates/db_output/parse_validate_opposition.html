@@ -11,21 +11,20 @@
 {% block extra_scripts %}<script src="{% static 'validation_jquery.js' %}"></script>{% endblock %}
 
 
-{% block title %} Parse Validate Team {% endblock %}
+{% block title %} Parse Validate Opposition {% endblock %}
 
 {% block content %}
 
-<h4>Team Validation</h4>
+<h4>Opposition Validation</h4>
 {% if filename %} Filename: <b> {{ filename }} </b><br> {% endif %}
+
 If possible, please select a match from our database using the provided form. <br>
-If no match is available, please uncheck the box and enter the new team details on the right.<br>
+If no match is available, please uncheck the box and enter the new opposition details on the right.<br>
 <br>
-Please do not create a new team each season.<br>
-The season provided at upload was: <b>{{ season }}</b><br>
-The team name provided during upload was: <b>{{ team_name }}</b><br>
+Please do not create a new opposition each season.<br>
+This game was recorded as occurring during: <b>{{ season }}</b><br>
 
 <p></p>
-
 <form method='post' enctype="multipart/form-data">
     {% csrf_token %}
     {{ primary_form.media.js }}
