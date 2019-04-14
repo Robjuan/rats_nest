@@ -91,13 +91,15 @@ def get_secondary_validation_form(param_model):
 
 class AnalysisForm(forms.Form):
 
+    # TODO: restrict to teams with games
     team = forms.ModelChoiceField(
         queryset=Team.objects.all(),
         label="Team",
         widget=ModelSelect2Widget(
             model=Team,
             search_fields=['team_name__icontains'],
-            attrs={'data-width': '75%'},  # resolve is giving me 35px whether explicit or implicit
+            attrs={'data-width': '75%',  # resolve is giving me 35px whether explicit or implicit
+                   'data-modeltype': 'Team'},
 
         )
     )

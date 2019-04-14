@@ -18,3 +18,14 @@ class PossessionQuerySet(models.QuerySet):
 class EventQuerySet(models.QuerySet):
     def by_possession(self, possession):
         return self.filter(possession=possession)
+
+
+class TeamManager(models.Manager):
+    def get_queryset(self):
+        initial = super().get_queryset()
+        ret_ids = []
+        for team in initial:
+            if team.has_games():
+                ret_ids.append(team.team_ID)
+
+        return initial.filter(pk__in=ret_ids)

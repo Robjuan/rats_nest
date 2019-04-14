@@ -1,8 +1,11 @@
 {% extends 'db_output/base_bootstrap.html' %}
 {% if extra_head %} {{ extra_head }} {% endif %}
+{% load static %}
 
 <!-- for django_select2 css -->
 {% if selector %} {% block extra_head %} {{ selector.media.css }} {% endblock %} {% endif %}
+
+{% block extra_scripts %}<script src="{% static 'analysis_jquery.js' %}"></script>{% endblock %}
 
 
 {% block title %} Analysis Select {% endblock %}
@@ -17,7 +20,11 @@
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
 
-        {{ selector.team.label_tag }} {{ selector.team }}<br><p></p>
+
+            {{ selector.team.label_tag }} {{ selector.team }}<br>
+            <div id="primary_form_extra_details-0"></div><br>
+        <p>
+
         {{ selector.games.label_tag }} {{ selector.games }}
 
         <p></p>

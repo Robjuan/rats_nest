@@ -1,5 +1,5 @@
 from django.db import models
-from .managers import PointQuerySet, PossessionQuerySet, EventQuerySet
+from .managers import PointQuerySet, PossessionQuerySet, EventQuerySet, TeamManager
 
 
 # document upload - not for stats analysis
@@ -82,11 +82,17 @@ class Team(models.Model):
                                     blank=True,
                                     null=True)
 
+    objects = models.Manager()  # preserve default behaviour in all other queries
+    with_games = TeamManager()  # to only show teams with games recorded against them (table-level)
+
     class Meta:
         ordering = ('team_name',)
 
     def __str__(self):
         return 'Team - [id:' + str(self.team_ID) + '] ' + str(self.team_name)
+
+    def has_games(self):  # to check if the team has games (row-level)
+        return Game.objects.filter(team=self).exists()
 
 
 class Game(models.Model):

@@ -522,16 +522,21 @@ def analysis_select(request):
 
             display_list = []
             display_table = []
+            display_raw = ''
+
             for a_index in func_indices:
 
                 new_data, display_format = analysis_options[int(a_index)][0](games=games, team=team)
                 if display_format == 'table':
                     display_table.append(new_data)
-                else:
+                elif display_format == 'list':
                     display_list.append(new_data)
+                else:  # display_format == 'raw'
+                    display_raw += str(new_data)
 
             return HttpResponse(render(request, 'db_output/analysis_present.html', {'display_list': display_list,
-                                                                                    'display_table': display_table}))
+                                                                                    'display_table': display_table,
+                                                                                    'display_raw': display_raw}))
 
         else:
             logger.warning('form not valid')

@@ -1,5 +1,19 @@
 # this is where we write analyses
 import logging
+import numpy as np
+import pandas as pd
+
+# TODO (NEXT) INTEGRATE PANDAS
+# we should be building dataframes here and then sending them back out to the view
+# > potentially with "how to display this" info attached
+# supporting analysis files should also build dataframes to be pushed back up into the suites hereo
+
+# suites should be classes inheriting from a base suite class
+# > can then do multi step stuff
+# > can then use class level variables for display stuff etc
+# >> should have a hook function that is called and returns the output
+# >> get the view to call this hook function
+# descriptive functions can stay independent
 
 
 def get_all_analyses():
@@ -32,6 +46,21 @@ def get_all_analyses():
 # step 2: combine those to get output
 # step 3: build an output framework (table?)
 
+
+def pandas_test_analysis(*args, **kwargs):
+    from .analysis_descriptive import throws_by_player
+    games = kwargs.pop('games')
+    team = kwargs.pop('team')
+    logger = logging.getLogger(__name__)
+
+    series = [throws_by_player(games, player) for player in team.players.all()]
+
+    ret_frame = pd.concat(series, keys=[player.player_ID for player in team.players.all()])
+
+    logger.debug(ret_frame)
+    return ret_frame.to_html(), 'raw'
+
+
 def descriptive_offence_team_analysis(*args, **kwargs):
     """
     Generates basic descriptive stats for all players on a team given certain games
@@ -44,7 +73,7 @@ def descriptive_offence_team_analysis(*args, **kwargs):
     team = kwargs.pop('team')
     logger = logging.getLogger(__name__)
 
-    from .analysis_descriptive import completion_pct_by_player, goals_by_player, points_played_by_player
+    from .analysis_descriptive import completion_pct_by_player, action_count_by_player, points_played_by_player
 
     decimal_places = 2
 
@@ -53,7 +82,7 @@ def descriptive_offence_team_analysis(*args, **kwargs):
     stat_list = [('Player Name', 'Goals', 'Completion %', 'Throws Attempted', 'Points Played')]
     for player in team_players:
         pct, throwcount = completion_pct_by_player(games, player, return_count=True, decimal_places=decimal_places)
-        goals = goals_by_player(games, player)
+        goals = action_count_by_player(games, player, action='Goal')
         pp = points_played_by_player(games, player)
         stat_list.append((player.proper_name, goals, pct, throwcount, pp))
 
@@ -83,7 +112,7 @@ def team_efficiency(*args, **kwargs):
 
     # passes per goal (including the assist)
 
-    output_data = [('Game','Passes','Goals')]
+    output_data = [('Game', 'Passes', 'Goals')]
 
     for game in games:
         if game.opposing_team:
@@ -114,17 +143,6 @@ def team_efficiency(*args, **kwargs):
                 # not summing these at all
 
     return output_data, 'table'
-
-
-
-
-
-
-
-
-
-
-    return
 
 
 def placeholder_analytic_possession_analysis(*args, **kwargs):

@@ -10,6 +10,7 @@
 {% block content %}
 
     {% if display_table %}  <!-- TODO: sortable tables -->
+        <div id="display_table">
         {% for table in display_table %}
         <table class="table">
             {% for row in table %}
@@ -25,13 +26,24 @@
             {% endfor %}
         </table>
         {% endfor %}
+        </div>
     {% endif %}
 
 
     {% if display_list %}
+        <div id="display_list"><ul>
         {% for item in display_list %}
-            {{ item }} <br>
+            <li>{{ item }}</li>
         {% endfor %}
+        </ul></div>
+    {% endif %}
+
+    {% if display_raw %}
+        <div id="display_raw">
+        {% autoescape off %}
+            {{ display_raw }}
+        {% endautoescape %}
+        </div>
     {% endif %}
 
 {% endblock %}
