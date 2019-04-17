@@ -520,23 +520,32 @@ def analysis_select(request):
             games = aform.cleaned_data['games']
             team = aform.cleaned_data['team']
 
+            content = {}
+
             display_list = []
             display_table = []
             display_raw = ''
 
+            template = 'db_output/analysis_present.html'
+
             for a_index in func_indices:
 
                 new_data, display_format = analysis_options[int(a_index)][0](games=games, team=team)
+
                 if display_format == 'table':
                     display_table.append(new_data)
+
                 elif display_format == 'list':
                     display_list.append(new_data)
+
                 else:  # display_format == 'raw'
                     display_raw += str(new_data)
 
-            return HttpResponse(render(request, 'db_output/analysis_present.html', {'display_list': display_list,
-                                                                                    'display_table': display_table,
-                                                                                    'display_raw': display_raw}))
+                    # allow redirect to team_stats template by specific display_format string
+
+            return HttpResponse(render(request, template, {'display_list': display_list,
+                                                           'display_table': display_table,
+                                                           'display_raw': display_raw}))
 
         else:
             logger.warning('form not valid')

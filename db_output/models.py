@@ -1,5 +1,7 @@
+import logging
 from django.db import models
-from .managers import PointQuerySet, PossessionQuerySet, EventQuerySet, TeamManager
+from .managers import PointQuerySet, PossessionQuerySet, EventQuerySet, TeamQuerySet
+
 
 
 # document upload - not for stats analysis
@@ -82,8 +84,7 @@ class Team(models.Model):
                                     blank=True,
                                     null=True)
 
-    objects = models.Manager()  # preserve default behaviour in all other queries
-    with_games = TeamManager()  # to only show teams with games recorded against them (table-level)
+    objects = TeamQuerySet.as_manager()
 
     class Meta:
         ordering = ('team_name',)
@@ -97,7 +98,7 @@ class Team(models.Model):
 
 class Game(models.Model):
     game_ID = models.AutoField(primary_key=True)
-    team = models.ForeignKey(Team, on_delete=models.PROTECT, related_name='this_team')
+    team = models.ForeignKey(Team, on_delete=models.PROTECT, related_name='teams')
     # need to handle a way to save the opposing team name without creating too much junk
     # if we only know the name
 
@@ -148,7 +149,8 @@ class Point(models.Model):
     point_ID = models.AutoField(primary_key=True)
     # CASCADE means that if the game is deleted, all the relevant points will be deleted too
     game = models.ForeignKey(Game,
-                             models.CASCADE)
+                             models.CASCADE,
+                             related_name='points')
 
     players = models.ManyToManyField(Player,
                                      related_name='players_on_field')
@@ -167,10 +169,35 @@ class Point(models.Model):
         return 'Point - [id:' + str(self.point_ID) + '] game: ' + str(self.game) + \
                ',[us|them]: [' + str(self.ourscore_EOP) + '|' + str(self.theirscore_EOP) + ']'
 
+    # using pk to order here is fine except in case of multithreading / errors in parse
+    # parse will create the points in turn
+
+    def previous_point(self):
+        return self.next_point(backwards=True)
+
+    def next_point(self, backwards=False):
+
+        logger = logging.getLogger(__name__)
+
+        if backwards:
+            target_int = int(self.point_ID) - 1
+            loggerstr = 'no immediately previous point exists: '+str(self.point_ID)
+        else:
+            target_int = int(self.point_ID) + 1
+            loggerstr = 'no immediately subsequent point exists: '+str(self.point_ID)
+
+        try:
+            ret_point = Point.objects.get(pk=target_int)
+        except self.DoesNotExist:
+            logger.warning(loggerstr)
+            ret_point = None
+
+        return ret_point
+
 
 class Possession(models.Model):
     possession_ID = models.AutoField(primary_key=True)
-    point = models.ForeignKey(Point, on_delete=models.CASCADE)
+    point = models.ForeignKey(Point, on_delete=models.CASCADE, related_name='possessions')
     # if the point is deleted, delete relevant possessions
 
     # manager
@@ -185,7 +212,10 @@ class Event(models.Model):
     # to find out the order of events in a possession, can sort by pk
 
     possession = models.ForeignKey(Possession,
-                                   on_delete=models.CASCADE)
+                                   on_delete=models.CASCADE, related_name='events')
+
+    # if events are related to the other team (blocks, throwaways, goals etc)
+    # then all three of passer/receiver/defender will be blank or anonymous
 
     # if the possession is deleted, delete relevant events
     passer = models.ForeignKey(Player,
@@ -213,6 +243,15 @@ class Event(models.Model):
 
     def __str__(self):
         return 'Event - [id:' + str(self.event_ID) + ']'
+
+    # TODO (now) is this always true?
+
+    def is_opposition(self):
+        blank_or_anon = ('', 'Anonymous')
+        if self.passer in blank_or_anon and self.receiver in blank_or_anon and self.defender in blank_or_anon:
+            return True
+        else:
+            return False
 
 
 class Pull(models.Model):

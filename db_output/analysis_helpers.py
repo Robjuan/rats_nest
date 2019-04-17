@@ -5,11 +5,11 @@
 
 import logging
 
+# TODO (soon) replace these loops with searches across relationships
+# TODO genericise
 
 def get_events_by_game(game):
     from .models import Point, Possession, Event
-
-    # TODO (db): this is slow and many loops - would chaining filters better be better?
 
     all_pks = []
 
@@ -24,3 +24,20 @@ def get_events_by_game(game):
     all_events = Event.objects.filter(pk__in=all_pks)
 
     return all_events
+
+
+def get_events_by_point(point, opposition_events=True):
+    from .models import Possession, Event
+
+    ret_pks = []
+
+    for possession in Possession.objects.filter(point=point):
+        for event in Event.objects.filter(possession=possession):
+            if opposition_events:
+                ret_pks.append(event.pk)
+            else:
+                if not event.is_opposition():
+                    ret_pks.append(event.pk)
+
+    ret_events = Event.objects.filter(pk__in=ret_pks)
+    return ret_events

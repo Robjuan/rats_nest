@@ -49,9 +49,6 @@ def check_conversion_dict(conversion_dict, file_obj_pk):
             return name
     return True
 
-
-# FIXME: running parse() before uploading a new csv causes an error on the remote build, but not local
-
 # ** One per game columns:
 # Date/Time
 # Tournament

@@ -13,7 +13,6 @@ Analysis is reading database doing maths
 TARGETS:
 
 Features:
-- robust player/team validation
 - combining/linking two UA games
 - analysis packages across multiple teams/seasons
 - control over who can view stats

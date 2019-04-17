@@ -9,6 +9,27 @@ import pandas as pd
 # should return a series where the index is game and the singular value is the value
 
 
+def per_point_team_analysis(game, team):
+    """
+    :param game:
+    :param team:
+    :return:
+    """
+    pass
+
+    """
+    for point in game
+        if our goal at end of point:
+            how many passes did it take? (build PPG)
+            how many possessions did it take? (build PoPG)
+        if we started on defence:
+            did we score? (build conversion %)
+        
+    
+    
+    """
+
+
 def throws_by_player(games, player):
     """
     builds a dataframe for a player representing their throws/turns across games
@@ -87,10 +108,7 @@ def action_count_by_player(games, player, action):
     :return:
     """
     logger = logging.getLogger(__name__)
-
-    # from Thunder2018_AllGames
-    # TODO (soon) build checking + adding against this in parse
-    SUPPORTED_ACTIONS = ['Pull', 'Throwaway', 'Catch', 'Goal', 'D', 'Drop', 'PullOb', 'Stall']
+    from .ua_definitions import SUPPORTED_ACTIONS
 
     total_actions = 0
     for game in games:

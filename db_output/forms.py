@@ -93,7 +93,7 @@ class AnalysisForm(forms.Form):
 
     # TODO: restrict to teams with games
     team = forms.ModelChoiceField(
-        queryset=Team.objects.all(),
+        queryset=Team.objects.with_games(),
         label="Team",
         widget=ModelSelect2Widget(
             model=Team,

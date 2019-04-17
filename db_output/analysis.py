@@ -1,6 +1,5 @@
 # this is where we write analyses
 import logging
-import numpy as np
 import pandas as pd
 
 # TODO (NEXT) INTEGRATE PANDAS
@@ -46,16 +45,35 @@ def get_all_analyses():
 # step 2: combine those to get output
 # step 3: build an output framework (table?)
 
+def constructors_test(*args, **kwargs):
+    from .analysis_constructors import construct_game_dataframe
+    games = kwargs.pop('games')
+    team = kwargs.pop('team')
+
+    ret_frame = construct_game_dataframe(games[0])
+    return ret_frame, 'raw'
+
 
 def pandas_test_analysis(*args, **kwargs):
-    from .analysis_descriptive import throws_by_player
+    from .analysis_descriptive import throws_by_player, points_played_by_player
+    from .models import Player
     games = kwargs.pop('games')
     team = kwargs.pop('team')
     logger = logging.getLogger(__name__)
 
-    series = [throws_by_player(games, player) for player in team.players.all()]
+    # only inspect actions by players with at least one point played across all games being analysed
+    active_ids = []
+    for player in team.players.all():
+        if points_played_by_player(games, player):
+            active_ids.append(player.player_ID)
+    active_players = Player.objects.filter(pk__in=active_ids)
 
-    ret_frame = pd.concat(series, keys=[player.player_ID for player in team.players.all()])
+    # list of series objects, one per player
+    series = [throws_by_player(games, player) for player in active_players.all()]
+
+    ret_frame = pd.concat(series, keys=[player.player_ID for player in active_players.all()])
+    ret_frame.index.rename(['player', 'game'], inplace=True)
+    # this is creating a hierarchical index where player is level 0, game is level 1
 
     logger.debug(ret_frame)
     return ret_frame.to_html(), 'raw'
