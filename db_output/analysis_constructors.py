@@ -17,34 +17,31 @@ def construct_game_dataframe(game):
 
     logger = logging.getLogger(__name__)
 
-    # TODO (now) need to be able to iterate over game.points
-    # presently type(game.points) = RelatedManager
-
     df = read_frame(Point.objects.filter(game=game),
                     fieldnames=['startingfence', 'ourscore_EOP', 'theirscore_EOP'],
                     index_col='point_ID')
 
     # assign(colname=data) data must be a series or series-like object
 
-    passes = pd.Series([get_events_by_point(point).filter(action__in=PASSES).count() for point in game.points],
+    passes = pd.Series([get_events_by_point(point).filter(action__in=PASSES).count() for point in game.points.all()],
                        index=df.index)
-    df.assign(passes=passes)
+    df = df.assign(passes=passes)
 
-    turnovers = pd.Series([get_events_by_point(point).filter(action__in=TURNOVERS) for point in game.points],
+    turnovers = pd.Series([get_events_by_point(point).filter(action__in=TURNOVERS).count() for point in game.points.all()],
                           index=df.index)
-    df.assign(turnovers=turnovers)
+    df = df.assign(turnovers=turnovers)
 
-    blocks = pd.Series([get_events_by_point(point).filter(action='D').count() for point in game.points],
+    blocks = pd.Series([get_events_by_point(point).filter(action='D').count() for point in game.points.all()],
                        index=df.index)
-    df.assign(blocks=blocks)
+    df = df.assign(blocks=blocks)
 
-    possessions = pd.Series([point.possessions.count() for point in game.points],
+    possessions = pd.Series([point.possessions.count() for point in game.points.all()],
                             index=df.index)
-    df.assign(possessions=possessions)
+    df = df.assign(possessions=possessions)
 
-    we_scored = pd.Series([point.next_point().ourscore_EOP > point.ourscore_EOP for point in game.points],
+    we_scored = pd.Series([bool_we_scored(point) for point in game.points.all()],
                           index=df.index)
-    df.assign(we_scored=we_scored)
+    df = df.assign(we_scored=we_scored)
 
     logger.debug(df)
     return df

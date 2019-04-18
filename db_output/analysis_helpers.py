@@ -5,6 +5,14 @@
 
 import logging
 
+
+def bool_we_scored(point):
+    if point.previous_point():
+        return point.ourscore_EOP > point.previous_point().ourscore_EOP
+    else:
+        return bool(point.ourscore_EOP)
+
+
 # TODO (soon) replace these loops with searches across relationships
 # TODO genericise
 
