@@ -50,7 +50,9 @@ def constructors_test(*args, **kwargs):
     games = kwargs.pop('games')
     team = kwargs.pop('team')
 
+    # TODO (next) take control of the styling / presentation of this
     ret_frame = construct_game_dataframe(games[0]).to_html()
+
     return ret_frame, 'raw'
 
 

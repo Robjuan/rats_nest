@@ -5,6 +5,12 @@ import logging
 
 
 def generate_readable(instance):
+    """
+    generates a dict in form {fieldname: fieldvalue} for a given object instance
+
+    :param instance: object to get readable form of
+    :return: dict ready to be displayed
+    """
     logger = logging.getLogger(__name__)
 
     disp_dict = {}

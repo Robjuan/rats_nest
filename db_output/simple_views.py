@@ -25,13 +25,14 @@ def insert_test_data(request):
     please_confirm_delete = False
 
     if please_confirm_insert and settings.DEBUG:
-        from .models import Player, Team
-        p = Player(proper_name='Anonymous', hometown='San Francisco, CA', csv_names='Anonymous')
-        p.save()
+        from .models import Player
+        for player in Player.objects.filter(proper_name__icontains='test_Player'):
+            number = player.proper_name.split('_')[2]
+            if int(number) % 2 == 0:
+                player.gender = 'F'
+                player.save()
 
-        t = Team(team_name='Default_team', origin='San Francisco, CA', division='Mixed')
-        t.save()
-        text = 'You have inserted:' + str(p) + ' and ' + str(t)
+        text = 'inserted'
 
     elif please_confirm_delete and settings.DEBUG:
         from .models import csvDocument

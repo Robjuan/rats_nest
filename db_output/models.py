@@ -23,11 +23,15 @@ class csvDocument(models.Model):
 # statistic storage
 
 class Player(models.Model):
+    GENDER_CHOICES = (('M', 'Male'),
+                      ('F', 'Female'))
+
     player_ID = models.AutoField(primary_key=True)
 
     # non-key
     proper_name = models.CharField(max_length=30)
-
+    gender = models.CharField(max_length=1,
+                              choices=GENDER_CHOICES)
     dob = models.DateField(max_length=8,
                            blank=True,
                            null=True)
