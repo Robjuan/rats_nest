@@ -418,7 +418,7 @@ def parse_verify(request):
 
 
 # atomic means that all db hits from this view will be held up and only executed on successful return
-@transaction.atomic()
+@transaction.atomic
 def parse_results(request):
     """
     Handles display of parse results
@@ -602,11 +602,7 @@ def team_stats(request):
             team = data_selection_form.cleaned_data['team']
 
             # get rid of this return value stuff quickly
-            disp_table, disp_format = constructors_test(team=team, games=games)
-
-
-
-
+            disp_table = constructors_test(team=team, games=games)
 
         else:
             return HttpResponse(render(request, 'db_output/team_stats.html',

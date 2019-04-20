@@ -5,6 +5,15 @@ from .ua_definitions import *
 
 
 def construct_game_dataframe(game):
+    """
+    constructs game dataframe from game model
+    points as index
+    columns:
+    startingfence (O/D), ourscore_EOP, theirscore_EOP, passes, turnovers, blocks, possessions, we_scored (bool)
+
+    :param game: game instance
+    :return: game dataframe
+    """
 
     # points as index
     # each stat as a column
@@ -46,10 +55,20 @@ def construct_game_dataframe(game):
     logger.debug(df)
     return df
 
-def construct_team_dataframe(game_dict):
 
+def construct_team_dataframe(game_dict):
+    """
+    constructs the team_stats dataframe
+    games as index
+    columns: score, passes, completion%, blocks, block%, possessions, OP%
+
+    :param game_dict: { game_id : game_dataframe }
+    :return: team_dataframe
+    """
 
 
     team_frame = pd.DataFrame(index=game_dict.keys())
+
+
 
     return team_frame

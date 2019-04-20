@@ -1,21 +1,15 @@
-# this is where we write analyses
 import logging
 import pandas as pd
 
-# TODO (NEXT) INTEGRATE PANDAS
-# we should be building dataframes here and then sending them back out to the view
-# > potentially with "how to display this" info attached
-# supporting analysis files should also build dataframes to be pushed back up into the suites hereo
-
-# suites should be classes inheriting from a base suite class
-# > can then do multi step stuff
-# > can then use class level variables for display stuff etc
-# >> should have a hook function that is called and returns the output
-# >> get the view to call this hook function
-# descriptive functions can stay independent
-
 
 def get_all_analyses():
+    """
+    returns {func:name} for all top-level members (funcs, classes etc)
+    excepting this function, and 'constructors_test'
+    this is for specific analysis selection (analysis_select)
+
+    :return:
+    """
     import inspect, sys
     logger = logging.getLogger(__name__)
     full_list = []
@@ -27,25 +21,16 @@ def get_all_analyses():
             full_list.append((obj, name))
 
     return full_list
-    # will return {func:name} for all top-level members (funcs, classes etc)
     # if we keep this file clear and only build analysis functions in it, should be sweet
 
 
-# all top-level analysis functions will be handed game_id and team_id as kwargs
-# these are the actual objects being passed in, not pks
-# 'game' and 'team' are the kwargs
-
-# can store basic box stats for display for completed (ie, AUL 2018) seasons etc
-
-# we can redefine these as classes and thereby set cute label names etc
-# calling the "analysisclass.analyse()" in view
-
-
-# step 1: build out basic descriptive stats that we can use to build more complex stats
-# step 2: combine those to get output
-# step 3: build an output framework (table?)
-
 def constructors_test(*args, **kwargs):
+    """
+    base function for team_stats
+
+    :param kwargs: games , team from data selection
+    :return: team_dataframe
+    """
     from .analysis_constructors import construct_game_dataframe, construct_team_dataframe
 
     games = kwargs.pop('games')
@@ -170,34 +155,20 @@ def team_efficiency(*args, **kwargs):
     return output_data, 'table'
 
 
-def placeholder_analytic_possession_analysis(*args, **kwargs):
+def placeholder_analysis(*args, **kwargs):
     """
-    To calculate efficiency and effectiveness per-possession for a team across given games
+    dreams go here
 
-    :param args:
-    :param kwargs:
-    :return:
     """
     games = kwargs.pop('games')
     team = kwargs.pop('team')
 
-    # # OFFENCE
-    # - effectiveness: likelihood of a goal being scored on particular possession
-    # - efficiency: goals scored per resource spent
-    # -- resources: passes
-    # likelihood of next pass being scoring pass
-    # likelihood of next pass being turnover
-    # passes per possession (ends in goal)
-    # passes per possession (non-scoring (turnover or
-    # possessions per goal (lower the better)
-    # Recovery %: pct time disc recovered after offensive turn
+    # Offensive Rating - Goals per 100 possessions
+    # likelihood of scoring or turnover per pass in point (graph)
+    # % of offensive possessions we score
+    # % of offensive possessions recovered after TO (recovery)
 
+    # % of defensive possessions we get a block
+    # % of offensive possessions we score after getting a block (conversion)
 
-
-    # # DEFENCE
-    # blocks per break
-
-    for game in games:
-        pass
-
-    return 'first null, team: ' + str(team), 'list'
+    return 'placeholder analysis - keep dreaming'

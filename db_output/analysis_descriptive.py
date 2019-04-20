@@ -2,32 +2,10 @@
 # differs from analyis_helpers in that these return numbers/stats
 
 from .analysis_helpers import *
-import numpy as np
 import pandas as pd
 
 # for each of these functions
-# should return a series where the index is game and the singular value is the value
-
-
-def per_point_team_analysis(game, team):
-    """
-    :param game:
-    :param team:
-    :return:
-    """
-    pass
-
-    """
-    for point in game
-        if our goal at end of point:
-            how many passes did it take? (build PPG)
-            how many possessions did it take? (build PoPG)
-        if we started on defence:
-            did we score? (build conversion %)
-        
-    
-    
-    """
+# should return a series where the index is game
 
 
 def throws_by_player(games, player):
