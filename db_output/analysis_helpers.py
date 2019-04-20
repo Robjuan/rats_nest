@@ -14,7 +14,6 @@ def bool_we_scored(point):
 
 
 # TODO (soon) replace these loops with searches across relationships
-# TODO genericise
 
 def get_events_by_game(game):
     from .models import Point, Possession, Event

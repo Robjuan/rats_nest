@@ -6,6 +6,7 @@
 import csv
 from . import models
 import logging
+from .ua_definitions import *
 
 
 def get_player_names(file_obj_pk):
@@ -15,6 +16,8 @@ def get_player_names(file_obj_pk):
     :param file_obj_pk: pk to csvdocument obj with file
     :return: list of player names in file
     """
+
+    # FIXME (as required) one blank name is being added to player_names here
 
     file = models.csvDocument.objects.get(pk=file_obj_pk).file
     csv_reader = csv.DictReader([line.decode('utf-8') for line in file.readlines()], delimiter=',')
@@ -43,10 +46,11 @@ def check_conversion_dict(conversion_dict, file_obj_pk):
     player_names = get_player_names(file_obj_pk)
     for name in player_names:
         if not name:
-            logger.warning('blank name in check_conversion_dict')
+            logger.warning('blank name in player_names')
             continue
         if name not in conversion_dict:
-            return name
+            logger.error('name: ' + str(name) + ' not in conversion_dict')
+            return False
     return True
 
 # ** One per game columns:
@@ -173,8 +177,13 @@ def parse(file_obj_pk, team_obj_pk, conversion_dict, verify=True, opposition_pk=
         #       Catch, Drop, Stall
         #   either:
         #       Goal, Throwaway
+        #   break in play:
+        #       EndOfFirstQuarter (event_type = Cessation)
+        #
 
         this_event = handle_new_event(this_possession.possession_ID, line)
+        if this_event.event_type in BREAK_TYPES:
+            continue  # no processing required for break in play
 
         if line['Defender']:
             this_event.defender = handle_check_player(conversion_dict[line['Defender']])
@@ -184,10 +193,7 @@ def parse(file_obj_pk, team_obj_pk, conversion_dict, verify=True, opposition_pk=
 
         this_event.save()
 
-        this_event.action = line['Action']
-        this_event.event_type = line['Event Type']
-
-        if line['Action'] == 'Pull' or line['Action'] == 'PullOB':
+        if line['Action'] in PULLS:
             # if we start on defence - first event will be a pull
             this_pull = handle_new_pull(conversion_dict[line['Defender']], this_point.point_ID,
                                         line['Hang Time (secs)'])
@@ -222,6 +228,7 @@ def handle_check_player(player_pk):
 def handle_new_event(possession_ID, line):
     this_event = models.Event()
     this_event.action = line['Action']
+    this_event.event_type = line['Event Type']
     this_event.elapsedtime = line['Elapsed Time (secs)']
     this_event.possession = models.Possession.objects.get(pk=possession_ID)
 

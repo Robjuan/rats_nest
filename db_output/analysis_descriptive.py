@@ -104,16 +104,16 @@ def action_count_by_player(games, player, action):
 
     :param games:
     :param player:
-    :param action: SUPPORTED_ACTIONS = ['Pull', 'Throwaway', 'Catch', 'Goal', 'D', 'Drop', 'PullOb', 'Stall']
+    :param action: see ua_definitions
     :return:
     """
     logger = logging.getLogger(__name__)
-    from .ua_definitions import SUPPORTED_ACTIONS
+    from .ua_definitions import RECEIVING_ACTIONS
 
     total_actions = 0
     for game in games:
         game_events = get_events_by_game(game)
-        if action in SUPPORTED_ACTIONS:
+        if action in RECEIVING_ACTIONS:
             this_game_actions = game_events.filter(receiver=player, action=action)
         else:
             logger.error('unsupported action: '+str(action)+'; returning 0')

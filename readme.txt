@@ -5,11 +5,8 @@ This platform will allow us to take in stats output by UltiAnalytics, and store 
 Additionally, the database structure will allow us to more readily write advanced analysis packages and produce higher-order stats.
 
 Heroku is our server/backend, Django is the framework, PostgreSQL is our database.
-PostgreSQL version must be 11.1+
-(recommend BigSQL on mac)
-
-
-
+PostgreSQL version must be 11.1+ (recommend BigSQL on mac)
+Requires libmemcached to be installed (and running) for local cache
 
 
 Workflow:
@@ -37,4 +34,3 @@ Merge working_dev branch to master branch
 -- git merge working_dev
 Log in to Heroku > Deploy > Manual Deploy (at bottom)
 Deploy the master branch.
-

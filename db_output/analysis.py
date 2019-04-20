@@ -20,7 +20,7 @@ def get_all_analyses():
     logger = logging.getLogger(__name__)
     full_list = []
     for name, obj in inspect.getmembers(sys.modules[__name__], inspect.isfunction):
-        if name == '__builtins__' or name == 'get_all_analyses':
+        if name == '__builtins__' or name == 'get_all_analyses' or name == 'constructors_test':
             continue
 
         else:
@@ -46,14 +46,19 @@ def get_all_analyses():
 # step 3: build an output framework (table?)
 
 def constructors_test(*args, **kwargs):
-    from .analysis_constructors import construct_game_dataframe
+    from .analysis_constructors import construct_game_dataframe, construct_team_dataframe
+
     games = kwargs.pop('games')
     team = kwargs.pop('team')
 
-    # TODO (next) take control of the styling / presentation of this
-    ret_frame = construct_game_dataframe(games[0]).to_html()
+    game_dict = {}
+    for game in games:
+        game_frame = construct_game_dataframe(game).to_html()
+        game_dict[game.game_ID] = game_frame
 
-    return ret_frame, 'raw'
+    ret_frame = construct_team_dataframe(game_dict)
+
+    return ret_frame
 
 
 def pandas_test_analysis(*args, **kwargs):

@@ -3,10 +3,18 @@
 
 
 # from Thunder2018_AllGames
-SUPPORTED_ACTIONS = ['Pull', 'Throwaway', 'Catch', 'Goal', 'D', 'Drop', 'PullOb', 'Stall']
+KNOWN_ACTIONS = ['Pull', 'Throwaway', 'Catch', 'Goal', 'D', 'Drop', 'PullOb', 'Stall', 'EndOfFirstQuarter']
+
+RECEIVING_ACTIONS = ['Catch', 'Goal', 'Drop']
 
 TURNOVERS = ['Stall', 'Drop', 'Throwaway']
 
 PASSES = ['Catch', 'Goal', 'Throwaway', 'Drop']
 
-# Event Type refers to our O/D status when the event occured
+PULLS = ['Pull', 'PullOB']
+
+# Event Type refers to our O/D status when the event occurred (or break in play)
+
+EVENT_TYPES = ['Offence', 'Defence', 'Cessation']
+
+BREAK_TYPES = ['Cessation']

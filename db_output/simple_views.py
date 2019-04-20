@@ -22,7 +22,7 @@ def insert_test_data(request):
     # Use the Admin portal for one offs
 
     please_confirm_insert = False
-    please_confirm_delete = False
+    please_confirm_move = False
 
     if please_confirm_insert and settings.DEBUG:
         from .models import Player
@@ -34,11 +34,28 @@ def insert_test_data(request):
 
         text = 'inserted'
 
-    elif please_confirm_delete and settings.DEBUG:
+    elif please_confirm_move and settings.DEBUG:
         from .models import csvDocument
-        for i in range(1, 5):
-            csvDocument.objects.filter(id=i).delete()
-        text = 'deleted'
+        import os
+
+        for file_obj in csvDocument.objects.filter(parsed=True):
+            head, tail = os.path.split(file_obj.file.name)
+
+            archive_path = os.path.join('csv', '.archive', tail)
+            manual_path = os.path.join('csv', '.manually_handled', tail)
+
+            try_archive = os.path.join(settings.MEDIA_ROOT, archive_path)
+            try_manual = os.path.join(settings.MEDIA_ROOT, manual_path)
+
+            if os.path.isfile(try_archive):
+                file_obj.file.name = archive_path
+
+            elif os.path.isfile(try_manual):
+                file_obj.file.name = manual_path
+
+            file_obj.save()
+
+        text = 'moved files'
 
     else:
         text = 'Nothing to see here'

@@ -21,7 +21,7 @@ def construct_game_dataframe(game):
                     fieldnames=['startingfence', 'ourscore_EOP', 'theirscore_EOP'],
                     index_col='point_ID')
 
-    # assign(colname=data) data must be a series or series-like object
+    # assign(colname=data) ; data must be a series or series-like object
 
     passes = pd.Series([get_events_by_point(point).filter(action__in=PASSES).count() for point in game.points.all()],
                        index=df.index)
@@ -45,3 +45,11 @@ def construct_game_dataframe(game):
 
     logger.debug(df)
     return df
+
+def construct_team_dataframe(game_dict):
+
+
+
+    team_frame = pd.DataFrame(index=game_dict.keys())
+
+    return team_frame

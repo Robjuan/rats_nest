@@ -4,6 +4,8 @@
 from django.shortcuts import render, redirect
 from django.http import HttpResponse, HttpResponseRedirect
 from django.conf import settings
+from django.db import transaction
+
 import logging
 
 # TODO (lp) refactor the logic out of views into it's own file ('view_logic.py')
@@ -24,9 +26,6 @@ def upload_csv(request):
     from .forms import csvDocumentForm
     from .models import csvDocument
     from .helpers import breakdown_data_file
-
-    # TODO (feat): take in more information about the game (location, conditions etc)
-    # use tags for conditions
 
     # this permission check might be duplicative as it is also checked in the template
     # TODO: this permission doesn't actually exist, but rob_development is a superuser so has_perm always returns True
@@ -77,13 +76,13 @@ def parse_select(request):
     # TODO (lp) make this a login required checkbox on the page
 
     if settings.DEBUG:
-        for obj in csvDocument.objects.all():
+        for obj in csvDocument.objects.all().order_by('your_team_name'):
             if obj.parsed:
                 filelist.append((obj.id, 'parsed: '+str(obj)))
             else:
                 filelist.append((obj.id, str(obj)))
     else:
-        for obj in csvDocument.objects.filter(parsed=False):
+        for obj in csvDocument.objects.filter(parsed=False).order_by('your_team_name'):
             filelist.append((obj.id, str(obj)))
 
     if request.method == 'POST':
@@ -92,7 +91,6 @@ def parse_select(request):
             fileobj_id = form.cleaned_data['filechoice']
             request.session['file_obj_pk'] = fileobj_id
             player_list = [x for x in get_player_names(fileobj_id) if not_blank_or_anonymous(x)]
-            # TODO (lp) why are there blank names
             request.session['player_list'] = player_list
 
             return redirect('parse_validate_team')
@@ -388,6 +386,9 @@ def parse_verify(request):
     from .models import Team
     logger = logging.getLogger(__name__)
 
+    # TODO (feat): take in more information about the game (location, conditions etc)
+    # use tags for conditions
+
     to_confirm = request.session['to_confirm']
 
     if request.method == 'GET':
@@ -416,6 +417,8 @@ def parse_verify(request):
             return HttpResponseRedirect('parse_results')
 
 
+# atomic means that all db hits from this view will be held up and only executed on successful return
+@transaction.atomic()
 def parse_results(request):
     """
     Handles display of parse results
@@ -426,7 +429,10 @@ def parse_results(request):
     """
     from django.core import serializers
     from .ua_parser import parse
-    from .models import Player, Team
+    from .models import Player, Team, csvDocument
+    import os
+
+    logger = logging.getLogger(__name__)
 
     # TODO (testing) break out logic into more easily testable funcs
 
@@ -479,7 +485,23 @@ def parse_results(request):
     parsed_results = parse(request.session['file_obj_pk'], team_obj_pk,
                            request.session['conversion_dict'], verify=request.session['verify'],
                            opposition_pk=opp_pk)
+    if not parsed_results:
+        logger.critical('parse() returned None')
+        raise Exception
+
     # currently this just gives us a success indicating string
+
+    # move parsed files into media/csv/.archive
+    file_obj = csvDocument.objects.get(pk=request.session['file_obj_pk'])
+    head, tail = os.path.split(file_obj.file.name)
+    new_path = os.path.join(settings.MEDIA_ROOT, 'csv', '.archive', tail)
+    try:
+        os.rename(file_obj.file.path, new_path)
+    except OSError:
+        logger.info('.archive directory does not exist, creating')
+        os.makedirs(os.path.join(settings.MEDIA_ROOT, 'csv', '.archive'))
+        os.rename(file_obj.file.path, new_path)
+    file_obj.save()
 
     return render(request, 'db_output/parse_results.html', context={'parsed_results': parsed_results})
 
@@ -552,3 +574,42 @@ def analysis_select(request):
             aform = AnalysisForm(analysis_choices=widget_choices)
             return HttpResponse(render(request, 'db_output/analysis_select.html', {'selector': aform}))
 
+
+def team_stats(request):
+    """
+    Produces the team stats overview page
+    Gets a team & games selection
+    Calls analysis
+    Returns something template -> list.js can use
+
+    :param request:
+    :return: team_stats
+    """
+    from .analysis import constructors_test
+    from .forms import DataSelectionForm
+
+    logger = logging.getLogger(__name__)
+
+    data_selection_form = DataSelectionForm()
+
+    if request.method == 'GET':
+        return HttpResponse(render(request, 'db_output/team_stats.html', {'data_selection_form': data_selection_form}))
+
+    else:  # request.method == 'POST':
+        data_selection_form = DataSelectionForm(request.POST)
+        if data_selection_form.is_valid():
+            games = data_selection_form.cleaned_data['games']
+            team = data_selection_form.cleaned_data['team']
+
+            # get rid of this return value stuff quickly
+            disp_table, disp_format = constructors_test(team=team, games=games)
+
+
+
+
+
+        else:
+            return HttpResponse(render(request, 'db_output/team_stats.html',
+                                       {'data_selection_form': data_selection_form}))
+
+        return render(request, 'db_output/team_stats.html', context={'table': disp_table})
