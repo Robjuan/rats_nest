@@ -37,23 +37,28 @@
             {% csrf_token %}
 
             {{ data_selection_form.media.js }}
-            <p>{{ data_selection_form.team.label_tag }}{{ data_selection_form.team }}</p>
-            <p>{{ data_selection_form.games.label_tag }}{{ data_selection_form.games }}</p>
+            <p>{{ data_selection_form.team.label_tag }} {{ data_selection_form.team }}</p>
+            <p>{{ data_selection_form.games.label_tag }} {{ data_selection_form.games }}</p>
 
             <button type="submit">Analyse</button>
         </form>
 
-    {% endif %}
+    {% else %}
 
     <h3> Team-Wide Stats: Overview</h3>
 
-    <!--{{ intro_block }}-->
+    <div class="intro_block"><p>
+        Team Name, Game List, Player List will be here
+    <!--{{ intro_block }}--></p></div>
+<hr>
+    <div class="table_block"><p>
+    {% autoescape off %}    {{ table }}    {% endautoescape %}</p></div>
+<hr>
+    <div class="graph_block"><p>
+        Sweet graphs
+    <!--{{ graph_block }}--></p></div>
 
-    {{ table }}
-
-    <!--{{ graph_block }}-->
-
-
+    {% endif %}
 
 
 

@@ -26,7 +26,7 @@ def construct_game_dataframe(game):
 
     logger = logging.getLogger(__name__)
 
-    df = read_frame(Point.objects.filter(game=game),
+    df = read_frame(Point.objects.filter(game=game).order_by('point_ID'),
                     fieldnames=['startingfence', 'ourscore_EOP', 'theirscore_EOP'],
                     index_col='point_ID')
 
@@ -52,7 +52,7 @@ def construct_game_dataframe(game):
                           index=df.index)
     df = df.assign(we_scored=we_scored)
 
-    logger.debug(df)
+    #logger.debug(df)
     return df
 
 
@@ -65,10 +65,25 @@ def construct_team_dataframe(game_dict):
     :param game_dict: { game_id : game_dataframe }
     :return: team_dataframe
     """
+    from .models import Game
+
+    logger = logging.getLogger(__name__)
+
+    indexlist = [str(game.opposing_team.team_name) if game.opposing_team else game.game_ID for game in Game.objects.filter(pk__in=game_dict.keys())]
+
+    tf = pd.DataFrame(index=indexlist)
+
+    scores = []
+    for gameid, frame in game_dict.items():
+        final_point = frame.iloc[-1]
+        score_str = str(final_point['ourscore_EOP']) + '-' + str(final_point['theirscore_EOP'])
+        scores.append(score_str)
+
+    score = pd.Series(scores, index=tf.index)
+    tf = tf.assign(score=score)
 
 
-    team_frame = pd.DataFrame(index=game_dict.keys())
 
 
 
-    return team_frame
+    return tf

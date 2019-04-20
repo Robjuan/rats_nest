@@ -38,12 +38,12 @@ def constructors_test(*args, **kwargs):
 
     game_dict = {}
     for game in games:
-        game_frame = construct_game_dataframe(game).to_html()
+        game_frame = construct_game_dataframe(game)
         game_dict[game.game_ID] = game_frame
 
     ret_frame = construct_team_dataframe(game_dict)
 
-    return ret_frame
+    return ret_frame.to_html()
 
 
 def pandas_test_analysis(*args, **kwargs):
