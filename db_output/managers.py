@@ -10,21 +10,24 @@
 
 
 from django.db import models
-
-
-class PointQuerySet(models.QuerySet):
-    def by_game(self, game):
-        return self.filter(game=game)
+from .ua_definitions import *
 
 
 class PossessionQuerySet(models.QuerySet):
-    def by_point(self, point):
-        return self.filter(point=point)
+    def no_cessation(self):
+        ret_ids = []
+        for poss in self.all():
+            if not poss.events.filter(event_type__in=BREAK_TYPES).exists():
+                ret_ids.append(poss.possession_ID)
+        return self.filter(pk__in=ret_ids)
 
 
 class EventQuerySet(models.QuerySet):
-    def by_possession(self, possession):
-        return self.filter(possession=possession)
+    def no_cessation(self):
+        return self.exclude(event_type__in=BREAK_TYPES)
+
+    def no_opposition_events(self):
+        return self.filter(pk__in=[event.pk for event in self.all() if not event.is_opposition])
 
 
 class TeamQuerySet(models.QuerySet):

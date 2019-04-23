@@ -105,11 +105,11 @@ def action_count_by_player(games, player, action):
 def points_played_by_player(games, player, starting_fence=None):
     """
     Returns number of points played for a given player in given games.
-    Filterable for all points, offence points or defence points.
+    Filterable for all points, offense points or defense points.
 
     :param games:
     :param player:
-    :param starting_fence: None, 'O' / 'Offence' or 'D' / 'Defence'
+    :param starting_fence: None, 'O' / 'Offense' or 'D' / 'Defense'
     :return: int number of points
     """
 
@@ -119,9 +119,9 @@ def points_played_by_player(games, player, starting_fence=None):
 
     total_points = 0
     for game in games:
-        if starting_fence == 'O' or starting_fence == 'Offence':
+        if starting_fence == 'O' or starting_fence == 'Offense':
             this_game_points = Point.objects.filter(game=game, startingfence='O')
-        elif starting_fence == 'D' or starting_fence == 'Defence':
+        elif starting_fence == 'D' or starting_fence == 'Defense':
             this_game_points = Point.objects.filter(game=game, startingfence='D')
         else:
             if starting_fence:

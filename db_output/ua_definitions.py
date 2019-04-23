@@ -3,7 +3,7 @@
 
 
 # from Thunder2018_AllGames
-KNOWN_ACTIONS = ['Pull', 'Throwaway', 'Catch', 'Goal', 'D', 'Drop', 'PullOb', 'Stall', 'EndOfFirstQuarter']
+KNOWN_ACTIONS = ['Pull', 'Throwaway', 'Catch', 'Goal', 'D', 'Drop', 'PullOb', 'Stall', 'EndOfFirstQuarter', 'Callahan']
 
 RECEIVING_ACTIONS = ['Catch', 'Goal', 'Drop']
 
@@ -13,8 +13,16 @@ PASSES = ['Catch', 'Goal', 'Throwaway', 'Drop']
 
 PULLS = ['Pull', 'PullOB']
 
+BLOCKS = ['D', 'Callahan']
+
+GOALS = ['Goal']
+
+CALLAHANS = ['Callahan']
+
 # Event Type refers to our O/D status when the event occurred (or break in play)
 
-EVENT_TYPES = ['Offence', 'Defence', 'Cessation']
+EVENT_TYPES = ['Offense', 'Defense', 'Cessation']
 
 BREAK_TYPES = ['Cessation']
+
+POSSESSION_TYPES = ['Offense', 'Defense']

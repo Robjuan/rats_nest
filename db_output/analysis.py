@@ -32,11 +32,12 @@ def constructors_test(*args, **kwargs):
     :return: team_dataframe
     """
     from .analysis_constructors import construct_game_dataframe, construct_team_dataframe
+    from collections import OrderedDict
 
     games = kwargs.pop('games')
     team = kwargs.pop('team')
 
-    game_dict = {}
+    game_dict = OrderedDict()
     for game in games:
         game_frame = construct_game_dataframe(game)
         game_dict[game.game_ID] = game_frame
@@ -71,7 +72,7 @@ def pandas_test_analysis(*args, **kwargs):
     return ret_frame.to_html(), 'raw'
 
 
-def descriptive_offence_team_analysis(*args, **kwargs):
+def descriptive_offense_team_analysis(*args, **kwargs):
     """
     Generates basic descriptive stats for all players on a team given certain games
 
@@ -140,7 +141,7 @@ def team_efficiency(*args, **kwargs):
                     point_events_pks.append(event.event_ID)
 
             point_events = Event.objects.filter(pk__in=point_events_pks)
-            if point_events.last().event_type == 'Defence':  # we got scored on
+            if point_events.last().event_type == 'Defense':  # we got scored on
                 continue
             else:  # we scored
                 for event in point_events:

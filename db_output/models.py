@@ -1,6 +1,6 @@
 import logging
 from django.db import models
-from .managers import PointQuerySet, PossessionQuerySet, EventQuerySet, TeamQuerySet
+from .managers import PossessionQuerySet, EventQuerySet, TeamQuerySet
 
 
 
@@ -161,13 +161,10 @@ class Point(models.Model):
 
     # non-key
     point_elapsed_seconds = models.IntegerField()
-    startingfence = models.CharField(max_length=30)  # not 100% settled on this
+    startingfence = models.CharField(max_length=30)
     ourscore_EOP = models.IntegerField()  # EOP = end of point
     theirscore_EOP = models.IntegerField()
-    halfatend = models.BooleanField(default=False)
-
-    # manager
-    objects = PointQuerySet.as_manager()
+    halfatend = models.BooleanField(default=False)  # TODO (as required) - cessation events exist sometimes
 
     def __str__(self):
         return 'Point - [id:' + str(self.point_ID) + '] game: ' + str(self.game) + \
@@ -192,8 +189,12 @@ class Point(models.Model):
 
         try:
             ret_point = Point.objects.get(pk=target_int)
+
+            if not ret_point.game == self.game:
+                raise self.DoesNotExist
+
         except self.DoesNotExist:
-            logger.warning(loggerstr)
+            logger.info(loggerstr)
             ret_point = None
 
         return ret_point
@@ -246,13 +247,21 @@ class Event(models.Model):
     objects = EventQuerySet.as_manager()
 
     def __str__(self):
-        return 'Event - [id:' + str(self.event_ID) + ']'
+        if self.is_opposition():
+            return 'Opp Event '+str(self.event_ID)+'; action: '+str(self.action)
+        elif self.passer and self.receiver:
+            return 'Event '+str(self.event_ID)+'; p: '+str(self.passer)+'; r: '+str(self.receiver)+'; a: '+str(self.action)
+        elif self.passer:
+            return 'Event '+str(self.event_ID)+'; p: '+str(self.passer)+'; a: '+str(self.action)
+        elif self.defender:
+            return 'Event '+str(self.event_ID)+'; d: '+str(self.defender)+'; a: '+str(self.action)
+        else:
+            return 'Event '+str(self.event_ID)+'; action: '+str(self.action)
 
-    # TODO (now) is this always true?
-
+    # this will currently include breaks like cessation
+    # those are not included in all() tho
     def is_opposition(self):
-        blank_or_anon = ('', 'Anonymous')
-        if self.passer in blank_or_anon and self.receiver in blank_or_anon and self.defender in blank_or_anon:
+        if self.passer is None and self.receiver is None and self.defender is None:
             return True
         else:
             return False

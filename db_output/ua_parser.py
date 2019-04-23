@@ -158,7 +158,12 @@ def parse(file_obj_pk, team_obj_pk, conversion_dict, verify=True, opposition_pk=
                 this_point = handle_new_point(this_game.game_ID, line, conversion_dict)
                 this_possession = handle_new_possession(this_point.point_ID)
 
-            elif line['Event Type'] != indexed_lines[index - 1][1]['Event Type']:  # new possession but not new point
+            # new possession but not new point
+            elif line['Event Type'] != indexed_lines[index - 1][1]['Event Type'] or \
+                    (line['Event Type'] == 'Offense' and line['Action'] in CALLAHANS):
+                    # callahans thrown do not normally create a new possession
+                    # callahans caught do - this is a workaround for UA
+
                 this_possession.save()
 
                 this_possession = handle_new_possession(this_point.point_ID)
@@ -197,6 +202,9 @@ def parse(file_obj_pk, team_obj_pk, conversion_dict, verify=True, opposition_pk=
             # if we start on defence - first event will be a pull
             this_pull = handle_new_pull(conversion_dict[line['Defender']], this_point.point_ID,
                                         line['Hang Time (secs)'])
+
+        if line['Action'] not in KNOWN_ACTIONS:
+            logger.critical('new action found: '+line['Action'])
 
         # elif line['Action'] == 'D':
 
