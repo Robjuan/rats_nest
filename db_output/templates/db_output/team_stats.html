@@ -3,6 +3,10 @@
 
 {% if data_selection_form %} {% block extra_head %} {{ data_selection_form.media.css }} {% endblock %} {% endif %}
 
+{% block extra_scripts %}
+<script src="//cdnjs.cloudflare.com/ajax/libs/list.js/1.5.0/list.min.js"></script>
+<script src="{% static 'dataframe_display_jquery.js' %}"></script>
+{% endblock %}
 
 {% block title %}Team Stats Overview {% endblock %}
 
@@ -50,10 +54,14 @@
     <div class="intro_block"><p>
         Team Name, Game List, Player List will be here
     <!--{{ intro_block }}--></p></div>
-<hr>
+    <hr>
+
     <div class="table_block"><p>
-    {% autoescape off %}    {{ table }}    {% endautoescape %}</p></div>
-<hr>
+        <div class="team_table">{% autoescape off %}    {{ table }}    {% endautoescape %}</div>
+        <div class="game_tables"><!-- jquery puts game tables here --></div>
+    </p></div>
+
+    <hr>
     <div class="graph_block"><p>
         Sweet graphs
     <!--{{ graph_block }}--></p></div>
