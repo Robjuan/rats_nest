@@ -5,6 +5,12 @@ import logging
 
 
 def generate_readable(instance):
+    """
+    generates a dict in form {fieldname: fieldvalue} for a given object instance
+
+    :param instance: object to get readable form of
+    :return: dict ready to be displayed
+    """
     logger = logging.getLogger(__name__)
 
     disp_dict = {}
@@ -52,21 +58,34 @@ def get_best_match(model, name):
     :return: pk of player object if match, else None
     """
     from .models import Player, Team
-    from django.db.models import Q
+    from difflib import get_close_matches
 
     logger = logging.getLogger(__name__)
 
     if model == Player:
-        matches = Player.objects.filter(Q(proper_name__istartswith=name) | Q(csv_names__icontains=name)).order_by('player_ID')
+        check1 = {}
+        for player in Player.objects.filter(proper_name__istartswith=name):
+            check1[player.proper_name] = player.player_ID
+        check2 = {}
+        for player in Player.objects.filter(csv_names__icontains=name):
+            for csv_name in player.csv_names.split(','):
+                check2[csv_name] = player.player_ID
+        check_against = {}
+        check_against.update(check1)
+        check_against.update(check2)
+
     elif model == Team:
-        matches = Team.objects.filter(team_name__icontains=name).order_by('team_ID')
+        check_against = {}
+        for team in Team.objects.filter(team_name__icontains=name):
+            check_against[team.team_name] = team.team_ID
+
     else:
         logger.warning('only Player and Team are supported models for get_best_match')
         return None
 
-    # TODO (lp): more accurate similarity test than "first"
-    if matches.first():
-        return matches.first().pk
+    match = get_close_matches(name, list(check_against.keys()), n=1)
+    if match:
+        return check_against[match[0]]
     else:
         logger.info('no match found for '+str(name))
         return None
@@ -93,7 +112,7 @@ def not_blank_or_anonymous(name):
 def breakdown_data_file(file):
     """
     Takes a csv data file with an arbitrary number of games,
-    breaks them into single game files, with opposition name appended
+    breaks them into single game files, with opposition name prepended
 
     :param file: csv filename
     :return: list of tuples (new_content_file, new_filename, opponent, datetime)
@@ -101,44 +120,28 @@ def breakdown_data_file(file):
     import csv
     from django.core.files.base import ContentFile
 
-    # TODO: build test for this
-
     logger = logging.getLogger(__name__)
     # decode out of bytes into string
 
     csv_reader = csv.DictReader([line.decode('utf-8') for line in file.readlines()])
-    indexed_lines = list(enumerate(csv_reader))
-    # indexed_lines[index] returns (index, line) tuple
+    indexed_lines = list(csv_reader)
 
     file_list = []
-    start_index = 0
-    for index, line in indexed_lines:
-        if index == 0:
-            continue
-        if line['Date/Time'] != indexed_lines[index-1][1]['Date/Time']:
-            # index will always be line number - 1
+    for i in range(0, len(indexed_lines)):
+        if indexed_lines[i]['Date/Time'] != indexed_lines[i-1]['Date/Time'] or i == 0:
 
-            # logger.debug('prev: '+str(indexed_lines[index-1][1]['Opponent']))
-            # logger.debug('curr: '+str(line['Opponent']))
-
-            end_index = index
-
-            opponent = indexed_lines[index-1][1]['Opponent']
-            datetime = indexed_lines[index-1][1]['Date/Time']
-
-            new_filename = opponent + '_' + file.name
+            # for filename
+            opponent = indexed_lines[i]['Opponent']
+            datetime = indexed_lines[i]['Date/Time']
+            # create file
+            new_filename = 'vs' + opponent + '_' + file.name
             new_content_file = ContentFile('')
             csv_writer = csv.writer(new_content_file)
-            csv_writer.writerow(indexed_lines[index][1].keys())  # header row
-
-            # logger.debug('si' + str(start_index) + ',ei' + str(end_index))
-
-            for i in range(start_index, end_index):
-                csv_writer.writerow(indexed_lines[i][1].values())
+            csv_writer.writerow(indexed_lines[i].keys())  # header row
 
             file_list.append((new_content_file, new_filename, opponent, datetime))
 
-            start_index = index
+        csv_writer.writerow(indexed_lines[i].values())
 
     logger.info('Breaking file into '+str(len(file_list))+' sub files')
     return file_list

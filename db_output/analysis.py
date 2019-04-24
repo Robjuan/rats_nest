@@ -1,38 +1,78 @@
-# this is where we write analyses
 import logging
+import pandas as pd
 
 
 def get_all_analyses():
+    """
+    returns {func:name} for all top-level members (funcs, classes etc)
+    excepting this function, and 'constructors_test'
+    this is for specific analysis selection (analysis_select)
+
+    :return:
+    """
     import inspect, sys
     logger = logging.getLogger(__name__)
     full_list = []
     for name, obj in inspect.getmembers(sys.modules[__name__], inspect.isfunction):
-        if name == '__builtins__' or name == 'get_all_analyses':
+        if name == '__builtins__' or name == 'get_all_analyses' or name == 'constructors_test':
             continue
 
         else:
             full_list.append((obj, name))
 
     return full_list
-    # will return {func:name} for all top-level members (funcs, classes etc)
     # if we keep this file clear and only build analysis functions in it, should be sweet
 
 
-# all top-level analysis functions will be handed game_id and team_id as kwargs
-# these are the actual objects being passed in, not pks
-# 'game' and 'team' are the kwargs
+def constructors_test(*args, **kwargs):
+    """
+    base function for team_stats
 
-# can store basic box stats for display for completed (ie, AUL 2018) seasons etc
+    :param kwargs: games , team from data selection
+    :return: team_dataframe
+    """
+    from .analysis_constructors import construct_game_dataframe, construct_team_dataframe
+    from collections import OrderedDict
 
-# we can redefine these as classes and thereby set cute label names etc
-# calling the "analysisclass.analyse()" in view
+    games = kwargs.pop('games')
+    team = kwargs.pop('team')
+
+    game_dict = OrderedDict()
+    for game in games:
+        game_frame = construct_game_dataframe(game)
+        game_dict[game.game_ID] = game_frame
+
+    ret_frame = construct_team_dataframe(game_dict)
+
+    return ret_frame.to_html()
 
 
-# step 1: build out basic descriptive stats that we can use to build more complex stats
-# step 2: combine those to get output
-# step 3: build an output framework (table?)
+def pandas_test_analysis(*args, **kwargs):
+    from .analysis_descriptive import throws_by_player, points_played_by_player
+    from .models import Player
+    games = kwargs.pop('games')
+    team = kwargs.pop('team')
+    logger = logging.getLogger(__name__)
 
-def descriptive_offence_team_analysis(*args, **kwargs):
+    # only inspect actions by players with at least one point played across all games being analysed
+    active_ids = []
+    for player in team.players.all():
+        if points_played_by_player(games, player):
+            active_ids.append(player.player_ID)
+    active_players = Player.objects.filter(pk__in=active_ids)
+
+    # list of series objects, one per player
+    series = [throws_by_player(games, player) for player in active_players.all()]
+
+    ret_frame = pd.concat(series, keys=[player.player_ID for player in active_players.all()])
+    ret_frame.index.rename(['player', 'game'], inplace=True)
+    # this is creating a hierarchical index where player is level 0, game is level 1
+
+    logger.debug(ret_frame)
+    return ret_frame.to_html(), 'raw'
+
+
+def descriptive_offense_team_analysis(*args, **kwargs):
     """
     Generates basic descriptive stats for all players on a team given certain games
 
@@ -44,7 +84,7 @@ def descriptive_offence_team_analysis(*args, **kwargs):
     team = kwargs.pop('team')
     logger = logging.getLogger(__name__)
 
-    from .analysis_descriptive import completion_pct_by_player, goals_by_player, points_played_by_player
+    from .analysis_descriptive import completion_pct_by_player, action_count_by_player, points_played_by_player
 
     decimal_places = 2
 
@@ -53,7 +93,7 @@ def descriptive_offence_team_analysis(*args, **kwargs):
     stat_list = [('Player Name', 'Goals', 'Completion %', 'Throws Attempted', 'Points Played')]
     for player in team_players:
         pct, throwcount = completion_pct_by_player(games, player, return_count=True, decimal_places=decimal_places)
-        goals = goals_by_player(games, player)
+        goals = action_count_by_player(games, player, action='Goal')
         pp = points_played_by_player(games, player)
         stat_list.append((player.proper_name, goals, pct, throwcount, pp))
 
@@ -83,7 +123,7 @@ def team_efficiency(*args, **kwargs):
 
     # passes per goal (including the assist)
 
-    output_data = [('Game','Passes','Goals')]
+    output_data = [('Game', 'Passes', 'Goals')]
 
     for game in games:
         if game.opposing_team:
@@ -101,7 +141,7 @@ def team_efficiency(*args, **kwargs):
                     point_events_pks.append(event.event_ID)
 
             point_events = Event.objects.filter(pk__in=point_events_pks)
-            if point_events.last().event_type == 'Defence':  # we got scored on
+            if point_events.last().event_type == 'Defense':  # we got scored on
                 continue
             else:  # we scored
                 for event in point_events:
@@ -116,45 +156,20 @@ def team_efficiency(*args, **kwargs):
     return output_data, 'table'
 
 
-
-
-
-
-
-
-
-
-    return
-
-
-def placeholder_analytic_possession_analysis(*args, **kwargs):
+def placeholder_analysis(*args, **kwargs):
     """
-    To calculate efficiency and effectiveness per-possession for a team across given games
+    dreams go here
 
-    :param args:
-    :param kwargs:
-    :return:
     """
     games = kwargs.pop('games')
     team = kwargs.pop('team')
 
-    # # OFFENCE
-    # - effectiveness: likelihood of a goal being scored on particular possession
-    # - efficiency: goals scored per resource spent
-    # -- resources: passes
-    # likelihood of next pass being scoring pass
-    # likelihood of next pass being turnover
-    # passes per possession (ends in goal)
-    # passes per possession (non-scoring (turnover or
-    # possessions per goal (lower the better)
-    # Recovery %: pct time disc recovered after offensive turn
+    # Offensive Rating - Goals per 100 possessions
+    # likelihood of scoring or turnover per pass in point (graph)
+    # % of offensive possessions we score
+    # % of offensive possessions recovered after TO (recovery)
 
+    # % of defensive possessions we get a block
+    # % of offensive possessions we score after getting a block (conversion)
 
-
-    # # DEFENCE
-    # blocks per break
-
-    for game in games:
-        pass
-
-    return 'first null, team: ' + str(team), 'list'
+    return 'placeholder analysis - keep dreaming'

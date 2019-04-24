@@ -1,5 +1,7 @@
+import logging
 from django.db import models
-from .managers import PointQuerySet, PossessionQuerySet, EventQuerySet
+from .managers import PossessionQuerySet, EventQuerySet, TeamQuerySet
+
 
 
 # document upload - not for stats analysis
@@ -21,11 +23,15 @@ class csvDocument(models.Model):
 # statistic storage
 
 class Player(models.Model):
+    GENDER_CHOICES = (('M', 'Male'),
+                      ('F', 'Female'))
+
     player_ID = models.AutoField(primary_key=True)
 
     # non-key
     proper_name = models.CharField(max_length=30)
-
+    gender = models.CharField(max_length=1,
+                              choices=GENDER_CHOICES)
     dob = models.DateField(max_length=8,
                            blank=True,
                            null=True)
@@ -82,16 +88,21 @@ class Team(models.Model):
                                     blank=True,
                                     null=True)
 
+    objects = TeamQuerySet.as_manager()
+
     class Meta:
         ordering = ('team_name',)
 
     def __str__(self):
         return 'Team - [id:' + str(self.team_ID) + '] ' + str(self.team_name)
 
+    def has_games(self):  # to check if the team has games (row-level)
+        return Game.objects.filter(team=self).exists()
+
 
 class Game(models.Model):
     game_ID = models.AutoField(primary_key=True)
-    team = models.ForeignKey(Team, on_delete=models.PROTECT, related_name='this_team')
+    team = models.ForeignKey(Team, on_delete=models.PROTECT, related_name='teams')
     # need to handle a way to save the opposing team name without creating too much junk
     # if we only know the name
 
@@ -142,29 +153,56 @@ class Point(models.Model):
     point_ID = models.AutoField(primary_key=True)
     # CASCADE means that if the game is deleted, all the relevant points will be deleted too
     game = models.ForeignKey(Game,
-                             models.CASCADE)
+                             models.CASCADE,
+                             related_name='points')
 
     players = models.ManyToManyField(Player,
                                      related_name='players_on_field')
 
     # non-key
     point_elapsed_seconds = models.IntegerField()
-    startingfence = models.CharField(max_length=30)  # not 100% settled on this
+    startingfence = models.CharField(max_length=30)
     ourscore_EOP = models.IntegerField()  # EOP = end of point
     theirscore_EOP = models.IntegerField()
-    halfatend = models.BooleanField(default=False)
-
-    # manager
-    objects = PointQuerySet.as_manager()
+    halfatend = models.BooleanField(default=False)  # TODO (as required) - cessation events exist sometimes
 
     def __str__(self):
         return 'Point - [id:' + str(self.point_ID) + '] game: ' + str(self.game) + \
                ',[us|them]: [' + str(self.ourscore_EOP) + '|' + str(self.theirscore_EOP) + ']'
 
+    # using pk to order here is fine except in case of multithreading / errors in parse
+    # parse will create the points in turn
+
+    def previous_point(self):
+        return self.next_point(backwards=True)
+
+    def next_point(self, backwards=False):
+
+        logger = logging.getLogger(__name__)
+
+        if backwards:
+            target_int = int(self.point_ID) - 1
+            loggerstr = 'no immediately previous point exists: '+str(self.point_ID)
+        else:
+            target_int = int(self.point_ID) + 1
+            loggerstr = 'no immediately subsequent point exists: '+str(self.point_ID)
+
+        try:
+            ret_point = Point.objects.get(pk=target_int)
+
+            if not ret_point.game == self.game:
+                raise self.DoesNotExist
+
+        except self.DoesNotExist:
+            logger.info(loggerstr)
+            ret_point = None
+
+        return ret_point
+
 
 class Possession(models.Model):
     possession_ID = models.AutoField(primary_key=True)
-    point = models.ForeignKey(Point, on_delete=models.CASCADE)
+    point = models.ForeignKey(Point, on_delete=models.CASCADE, related_name='possessions')
     # if the point is deleted, delete relevant possessions
 
     # manager
@@ -179,7 +217,10 @@ class Event(models.Model):
     # to find out the order of events in a possession, can sort by pk
 
     possession = models.ForeignKey(Possession,
-                                   on_delete=models.CASCADE)
+                                   on_delete=models.CASCADE, related_name='events')
+
+    # if events are related to the other team (blocks, throwaways, goals etc)
+    # then all three of passer/receiver/defender will be blank or anonymous
 
     # if the possession is deleted, delete relevant events
     passer = models.ForeignKey(Player,
@@ -206,7 +247,24 @@ class Event(models.Model):
     objects = EventQuerySet.as_manager()
 
     def __str__(self):
-        return 'Event - [id:' + str(self.event_ID) + ']'
+        if self.is_opposition():
+            return 'Opp Event '+str(self.event_ID)+'; action: '+str(self.action)
+        elif self.passer and self.receiver:
+            return 'Event '+str(self.event_ID)+'; p: '+str(self.passer)+'; r: '+str(self.receiver)+'; a: '+str(self.action)
+        elif self.passer:
+            return 'Event '+str(self.event_ID)+'; p: '+str(self.passer)+'; a: '+str(self.action)
+        elif self.defender:
+            return 'Event '+str(self.event_ID)+'; d: '+str(self.defender)+'; a: '+str(self.action)
+        else:
+            return 'Event '+str(self.event_ID)+'; action: '+str(self.action)
+
+    # this will currently include breaks like cessation
+    # those are not included in all() tho
+    def is_opposition(self):
+        if self.passer is None and self.receiver is None and self.defender is None:
+            return True
+        else:
+            return False
 
 
 class Pull(models.Model):

@@ -89,20 +89,52 @@ def get_secondary_validation_form(param_model):
     return SecondaryValidationForm
 
 
-class AnalysisForm(forms.Form):
-
+class DataSelectionForm(forms.Form):
+    # TODO: restrict to teams with games
     team = forms.ModelChoiceField(
-        queryset=Team.objects.all(),
+        queryset=Team.objects.with_games(),
         label="Team",
         widget=ModelSelect2Widget(
             model=Team,
             search_fields=['team_name__icontains'],
-            attrs={'data-width': '75%'},  # resolve is giving me 35px whether explicit or implicit
+            attrs={'data-width': '75%',  # resolve is giving me 35px whether explicit or implicit
+                   'data-modeltype': 'Team'},
 
         )
     )
 
     # TODO: filter out non-verified data here
+    games = forms.ModelMultipleChoiceField(
+        # queryset=Game.objects.all(),
+        queryset=Game.objects.filter(verified=True),
+        label="Game(s)",
+        widget=ModelSelect2MultipleWidget(
+            model=Game,
+            search_fields=['tournament_name'],
+            dependent_fields={'team': 'team'},
+            max_results=500,
+            attrs={'data-width': '75%'},
+
+        )
+    )
+
+
+class AnalysisForm(forms.Form):
+
+    # TODO : depreciate this and retire checkbox analysis selectionx`
+
+    team = forms.ModelChoiceField(
+        queryset=Team.objects.with_games(),
+        label="Team",
+        widget=ModelSelect2Widget(
+            model=Team,
+            search_fields=['team_name__icontains'],
+            attrs={'data-width': '75%',  # resolve is giving me 35px whether explicit or implicit
+                   'data-modeltype': 'Team'},
+
+        )
+    )
+
     games = forms.ModelMultipleChoiceField(
         # queryset=Game.objects.all(),
         queryset=Game.objects.filter(verified=True),

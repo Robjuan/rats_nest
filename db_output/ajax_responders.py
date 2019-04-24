@@ -14,8 +14,12 @@ def set_extra_details(request):
 
     logger = logging.getLogger(__name__)
 
-    modeltype = request.POST['modeltype']
-    selected_pk = request.POST['selected_pk']
+    try:
+        modeltype = request.POST['modeltype']
+        selected_pk = request.POST['selected_pk']
+    except KeyError:
+        logger.warning('modeltype/selected_pk not in request.POST')
+        return JsonResponse({'success': False})
 
     if modeltype == 'Player':
         obj = Player.objects.get(pk=selected_pk)

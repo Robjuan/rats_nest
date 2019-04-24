@@ -22,22 +22,40 @@ def insert_test_data(request):
     # Use the Admin portal for one offs
 
     please_confirm_insert = False
-    please_confirm_delete = False
+    please_confirm_move = False
 
     if please_confirm_insert and settings.DEBUG:
-        from .models import Player, Team
-        p = Player(proper_name='Anonymous', hometown='San Francisco, CA', csv_names='Anonymous')
-        p.save()
+        from .models import Player
+        for player in Player.objects.filter(proper_name__icontains='test_Player'):
+            number = player.proper_name.split('_')[2]
+            if int(number) % 2 == 0:
+                player.gender = 'F'
+                player.save()
 
-        t = Team(team_name='Default_team', origin='San Francisco, CA', division='Mixed')
-        t.save()
-        text = 'You have inserted:' + str(p) + ' and ' + str(t)
+        text = 'inserted'
 
-    elif please_confirm_delete and settings.DEBUG:
+    elif please_confirm_move and settings.DEBUG:
         from .models import csvDocument
-        for i in range(1, 5):
-            csvDocument.objects.filter(id=i).delete()
-        text = 'deleted'
+        import os
+
+        for file_obj in csvDocument.objects.filter(parsed=True):
+            head, tail = os.path.split(file_obj.file.name)
+
+            archive_path = os.path.join('csv', '.archive', tail)
+            manual_path = os.path.join('csv', '.manually_handled', tail)
+
+            try_archive = os.path.join(settings.MEDIA_ROOT, archive_path)
+            try_manual = os.path.join(settings.MEDIA_ROOT, manual_path)
+
+            if os.path.isfile(try_archive):
+                file_obj.file.name = archive_path
+
+            elif os.path.isfile(try_manual):
+                file_obj.file.name = manual_path
+
+            file_obj.save()
+
+        text = 'moved files'
 
     else:
         text = 'Nothing to see here'

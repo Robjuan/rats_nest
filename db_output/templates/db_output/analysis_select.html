@@ -1,33 +1,47 @@
 {% extends 'db_output/base_bootstrap.html' %}
 {% if extra_head %} {{ extra_head }} {% endif %}
+{% load static %}
 
 <!-- for django_select2 css -->
 {% if selector %} {% block extra_head %} {{ selector.media.css }} {% endblock %} {% endif %}
+
+{% block extra_scripts %}<script src="{% static 'analysis_jquery.js' %}"></script>{% endblock %}
 
 
 {% block title %} Analysis Select {% endblock %}
 
 {% block content %}
 
-    {% if selector %}
-    {{ selector.media.js }}
+    {% if perms.db_output.can_specify_analysis %}
 
-    <h3> Please select a Team and Game: </h3>
+        {% if selector %}
+        {{ selector.media.js }}
 
-    <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
+        <h3> Please select a Team and Game: </h3>
 
-        {{ selector.team.label_tag }} {{ selector.team }}<br><p></p>
-        {{ selector.games.label_tag }} {{ selector.games }}
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
 
-        <p></p>
-        <h3> Please select one or more analyses to run:</h3>
-        {{ selector.analysischoice }}
 
-        <button type="submit">Analyse</button>
+                {{ selector.team.label_tag }} {{ selector.team }}<br>
+                <div id="primary_form_extra_details-0"></div><br>
+            <p>
 
-    </form>
+            {{ selector.games.label_tag }} {{ selector.games }}
 
+            <p></p>
+            <h3> Please select one or more analyses to run:</h3>
+            {{ selector.analysischoice }}
+
+            <button type="submit">Analyse</button>
+
+        </form>
+
+        {% endif %}
+
+    {% else %}
+        <h3> You do not have permission to run specific analysis, please try View Team Stats</h3>
+        <p><a href="{% url 'login' %}">Login here</a></p>
     {% endif %}
 
 

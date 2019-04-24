@@ -2,6 +2,42 @@
 # differs from analyis_helpers in that these return numbers/stats
 
 from .analysis_helpers import *
+import pandas as pd
+
+# for each of these functions
+# should return a series where the index is game
+
+
+def throws_by_player(games, player):
+    """
+    builds a dataframe for a player representing their throws/turns across games
+
+    dataframe in form:
+
+    # (index) throws turns
+    # <game>  x      y
+    # <game2> x      y
+
+    :param games:
+    :param player:
+    :return: pandas dataframe
+    """
+
+    logger = logging.getLogger(__name__)
+
+    throw_dict = {}
+    turn_dict = {}
+    for game in games:
+        game_events = get_events_by_game(game)
+        throw_dict[game.game_ID] = game_events.filter(passer=player).count()
+        turn_dict[game.game_ID] = game_events.filter(passer=player, action='Throwaway').count()
+
+    d = {'throws': pd.Series(throw_dict), 'turns': pd.Series(turn_dict)}
+    s_out = pd.DataFrame(d)
+
+    #logger.debug(s_out)
+
+    return s_out
 
 
 def completion_pct_by_player(games, player, return_count=False, decimal_places=2):
@@ -40,23 +76,58 @@ def completion_pct_by_player(games, player, return_count=False, decimal_places=2
         return completion
 
 
-def goals_by_player(games, player):
+def action_count_by_player(games, player, action):
+    """
+    gets a count of how many times player recorded a certain action across given games
 
-    total_goals = 0
+    :param games:
+    :param player:
+    :param action: see ua_definitions
+    :return:
+    """
+    logger = logging.getLogger(__name__)
+    from .ua_definitions import RECEIVING_ACTIONS
+
+    total_actions = 0
     for game in games:
         game_events = get_events_by_game(game)
-        this_game_goals = game_events.filter(receiver=player, action='Goal')
-        total_goals += this_game_goals.count()
+        if action in RECEIVING_ACTIONS:
+            this_game_actions = game_events.filter(receiver=player, action=action)
+        else:
+            logger.error('unsupported action: '+str(action)+'; returning 0')
+            return 0
 
-    return total_goals
+        total_actions += this_game_actions.count()
+
+    return total_actions
 
 
-def points_played_by_player(games, player):
+def points_played_by_player(games, player, starting_fence=None):
+    """
+    Returns number of points played for a given player in given games.
+    Filterable for all points, offense points or defense points.
+
+    :param games:
+    :param player:
+    :param starting_fence: None, 'O' / 'Offense' or 'D' / 'Defense'
+    :return: int number of points
+    """
+
     from .models import Point
+
+    logger = logging.getLogger(__name__)
 
     total_points = 0
     for game in games:
-        this_game_points = Point.objects.filter(game=game)
+        if starting_fence == 'O' or starting_fence == 'Offense':
+            this_game_points = Point.objects.filter(game=game, startingfence='O')
+        elif starting_fence == 'D' or starting_fence == 'Defense':
+            this_game_points = Point.objects.filter(game=game, startingfence='D')
+        else:
+            if starting_fence:
+                logger.warning('unsupported starting_fence: '+starting_fence+', returning all points')
+            this_game_points = Point.objects.filter(game=game)
+
         for point in this_game_points:
             if player in point.players.all():
                 total_points += 1

@@ -31,6 +31,7 @@ urlpatterns = [
     # Category: Analysis
     path('analysis_select', views.analysis_select, name='analysis_select'),
     # path('analysis_present', views.analysis_present, name='analysis_present'),
+    path('team_stats', views.team_stats, name='team_stats'),
 
     # Category: Simple & Other
     path('insert_test_data', simple_views.insert_test_data, name='insert_test_data'),
