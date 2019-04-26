@@ -85,6 +85,7 @@ def construct_game_dataframe(game):
     # their goals + our blocks + their turnovers + our callahans scored
     opp_possessions = opp_goals + blocks + opp_turns + opp_callahans_thrown
 
+    # check our possession calculations
     pos_testframe = pd.concat([total_possessions - (possessions + opp_possessions)], axis=1)
     zeroframe = pd.DataFrame(0, index=pos_testframe.index, columns=pos_testframe.columns)
     if not zeroframe.equals(pos_testframe):
@@ -123,7 +124,9 @@ def construct_team_dataframe(game_dict):
     # WHEN NOT SPECIFIED ALL STATS RELATE TO US ONLY
 
     # create list of 'vs opponent' row titles to use as index
-    indexlist = [str('vs ' + game.opposing_team.team_name) if game.opposing_team else game.game_ID for game in Game.objects.filter(pk__in=game_dict.keys())]
+    # indexlist = [str('vs ' + game.opposing_team.team_name) if game.opposing_team else game.game_ID for game in Game.objects.filter(pk__in=game_dict.keys())]
+
+    indexlist = [game.game_ID for game in Game.objects.filter(pk__in=game_dict.keys())]
 
     tf = pd.DataFrame(index=indexlist)
 

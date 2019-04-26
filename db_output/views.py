@@ -5,6 +5,9 @@ from django.shortcuts import render, redirect
 from django.http import HttpResponse, HttpResponseRedirect
 from django.conf import settings
 from django.db import transaction
+from django.views.decorators.csrf import ensure_csrf_cookie
+from django.views.decorators.clickjacking import xframe_options_exempt
+
 
 import logging
 
@@ -96,7 +99,7 @@ def parse_select(request):
             return redirect('parse_validate_team')
     else:
         if settings.DEBUG:
-            logger.warning('presenting parsed objects as parseable')
+            logger.info('presenting parsed objects as parseable')
 
         form = fileSelector(choices=filelist)
         return render(request, 'db_output/parse_select.html', {'form': form})
@@ -349,7 +352,7 @@ def parse_validate_player(request):
                     details.append(secondary_form.errors)
                     warning_string = 'neither form valid @ index: ' + str(index)
 
-                logger.warning(details)
+                logger.error(details)
 
                 primary_formset = primary_formset_factory(queryset=formset_queryset, prefix='names')
                 secondary_formset = secondary_formset_factory(queryset=empty_queryset, prefix='details')
@@ -570,11 +573,14 @@ def analysis_select(request):
                                                            'display_raw': display_raw}))
 
         else:
-            logger.warning('form not valid')
+            logger.info('form not valid')
             aform = AnalysisForm(analysis_choices=widget_choices)
             return HttpResponse(render(request, 'db_output/analysis_select.html', {'selector': aform}))
 
 
+# make sure the cookie is set, event with no form rendered (for ajax)
+@ensure_csrf_cookie
+@xframe_options_exempt  # todo (security): this is only to stop it breaking in a very weird way
 def team_stats(request):
     """
     Produces the team stats overview page
@@ -585,8 +591,10 @@ def team_stats(request):
     :param request:
     :return: team_stats
     """
-    from .analysis import constructors_test
+    from .analysis_helpers import get_dataframe_columns
+    from .analysis_constructors import construct_game_dataframe, construct_team_dataframe
     from .forms import DataSelectionForm
+    from collections import OrderedDict
 
     logger = logging.getLogger(__name__)
 
@@ -597,15 +605,42 @@ def team_stats(request):
 
     else:  # request.method == 'POST':
         data_selection_form = DataSelectionForm(request.POST)
-        if data_selection_form.is_valid():
-            games = data_selection_form.cleaned_data['games']
-            team = data_selection_form.cleaned_data['team']
-
-            # get rid of this return value stuff quickly
-            disp_table = constructors_test(team=team, games=games)
-
-        else:
+        if not data_selection_form.is_valid():
+            # reload the page
             return HttpResponse(render(request, 'db_output/team_stats.html',
                                        {'data_selection_form': data_selection_form}))
 
-        return render(request, 'db_output/team_stats.html', context={'table': disp_table})
+        else:  # if forms ARE valid
+            games = data_selection_form.cleaned_data['games']
+            team = data_selection_form.cleaned_data['team']
+
+            game_names = [str('vs ' + game.opposing_team.team_name) if game.opposing_team else game.game_ID for game in games]
+            player_list = []
+            for game in games:
+                for point in game.points.all():
+                    player_list = player_list + [p for p in point.players.all() if p not in player_list]
+
+            # need to know what columns will be used for each of Team and Game tables
+            # TODO (as needed) restructure this in a way that does not require running actual calculations
+            try:
+                game_columns = request.session['game_cols']
+                team_columns = request.session['team_cols']
+            except KeyError:
+                game_test_frame = construct_game_dataframe(games[0])
+                game_columns = get_dataframe_columns(game_test_frame, extra=['Point'], start=0)
+                request.session['game_cols'] = game_columns
+
+                test_game_dict = OrderedDict()
+                test_game_dict[games[0].game_ID] = game_test_frame
+                team_test_frame = construct_team_dataframe(test_game_dict)
+                team_columns = get_dataframe_columns(team_test_frame, extra=['Game'], start=0)
+                request.session['team_cols'] = team_columns
+
+            # TODO (next) send active player list
+
+        return render(request, 'db_output/team_stats.html', context={'team_columns': team_columns,
+                                                                     'game_columns': game_columns,
+                                                                     'player_list': player_list,
+                                                                     'team_name': team.team_name,
+                                                                     'game_names': game_names,
+                                                                     'game_ids': [game.game_ID for game in games]})

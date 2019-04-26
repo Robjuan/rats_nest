@@ -194,7 +194,7 @@ class Point(models.Model):
                 raise self.DoesNotExist
 
         except self.DoesNotExist:
-            logger.info(loggerstr)
+            # logger.info(loggerstr)
             ret_point = None
 
         return ret_point

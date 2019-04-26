@@ -7,3 +7,8 @@ register = template.Library()
 @register.simple_tag
 def index(input_list, i):
     return input_list[i]
+
+
+@register.simple_tag
+def modulo(a, b):
+    return a % b
