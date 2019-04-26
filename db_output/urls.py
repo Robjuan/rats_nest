@@ -11,11 +11,12 @@ from . import views, simple_views, ajax_responders
 
 
 urlpatterns = [
-    # Validation ajax
+    # jquery ajax
     # path('ajax/update_details', ajax_responders.update_details, name='ajax_update_details'),
     path('ajax/get_initial_match', ajax_responders.get_initial_match, name='ajax_get_initial_match'),
     path('ajax/set_active_form', ajax_responders.set_active_form, name='ajax_set_active_form'),
     path('ajax/set_extra_details', ajax_responders.set_extra_details, name='ajax_set_extra_details'),
+    path('ajax/get_datatables_json', ajax_responders.get_datatables_json, name='ajax_get_datatables_json'),
 
     # Category: Parse
     path('parse_select', views.parse_select, name='parse_select'),

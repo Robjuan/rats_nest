@@ -1,11 +1,27 @@
 {% extends 'db_output/base_bootstrap.html' %}
 {% if extra_head %} {{ extra_head }} {% endif %}
+{% load static %} {% load looping_extras %}
 
-{% if data_selection_form %} {% block extra_head %} {{ data_selection_form.media.css }} {% endblock %} {% endif %}
+{% block extra_head %}
+<style>
+th { font-size: 15px; }
+td { font-size: 13px; }
+</style>
+{% if data_selection_form %}  {{ data_selection_form.media.css }} {% endif %}
+{% endblock %}
 
+{# we don't need these scripts if we're not displaying dataframes #}
 {% block extra_scripts %}
-<script src="//cdnjs.cloudflare.com/ajax/libs/list.js/1.5.0/list.min.js"></script>
-<script src="{% static 'dataframe_display_jquery.js' %}"></script>
+    {% if team_name %}
+        {# datatables; for display of tables, sortability, etc #}
+        <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.js"></script>
+        <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.19/css/jquery.dataTables.css">
+
+        {# js-cookie; for fetching csrf out of cookies #}
+        <script src="https://cdn.jsdelivr.net/npm/js-cookie@2/src/js.cookie.min.js"></script>
+        {# where our custom jquery lives #}
+        <script src="{% static 'dataframe_display_jquery.js' %}"></script>
+    {% endif %}
 {% endblock %}
 
 {% block title %}Team Stats Overview {% endblock %}
@@ -41,30 +57,93 @@
             {% csrf_token %}
 
             {{ data_selection_form.media.js }}
+            {{ data_selection_form.errors }}
             <p>{{ data_selection_form.team.label_tag }} {{ data_selection_form.team }}</p>
             <p>{{ data_selection_form.games.label_tag }} {{ data_selection_form.games }}</p>
 
-            <button type="submit">Analyse</button>
+            <button type="submit">View</button>
         </form>
 
-    {% else %}
+    {% endif %}
+
+    {% if team_name %}
+    <form method="post" style="display: none;">{% csrf_token %}</form>
+
 
     <h3> Team-Wide Stats: Overview</h3>
 
     <div class="intro_block"><p>
-        Team Name, Game List, Player List will be here
-    <!--{{ intro_block }}--></p></div>
-    <hr>
+        <b>Team:</b> {{ team_name }}<br>
+        <table><tr> {# single row table for column-like display #}
+            <td>
+                <b>Games: </b>
+                <ul>{% for game in game_names %}
+                    <li>{{ game }}</li>
+                    {% endfor %}
+                </ul></td>
+            <td>
+                <b>Active Players:</b>
+                <ul>
+                    {% for player in player_list %}
 
-    <div class="table_block"><p>
-        <div class="team_table">{% autoescape off %}    {{ table }}    {% endautoescape %}</div>
-        <div class="game_tables"><!-- jquery puts game tables here --></div>
+                        {% modulo forloop.counter 5 as result %}
+                        {% if result == 0 %}
+                </ul>
+            </td>
+            <td>
+                <ul>
+                        {% endif %}
+
+                    <li> {{ player }} </li>
+                    {% endfor %}
+                </ul>
+            </td>
+        </tr></table>
     </p></div>
 
     <hr>
-    <div class="graph_block"><p>
-        Sweet graphs
-    <!--{{ graph_block }}--></p></div>
+
+    <div id="table_block_wrapper"><p>
+
+        <div class="team_table_div">
+            <table id="team_table" class="display compact" style="width: 100%">
+                <thead>
+                <tr>
+                    {% for column in team_columns %}
+                    <th data-colname="{{ column }}">{{ column|title }}</th>
+                    {% endfor %}
+                </tr>
+                </thead>
+
+
+                {% comment %}
+                <tfoot>
+                <tr>
+                    {% for column in team_columns %}
+                    <th>{{ column }}</th>
+                    {% endfor %}
+                </tr>
+                </tfoot>
+                {% endcomment %}
+            </table>
+
+        </div>
+        <hr>
+
+        <div class="game_table_div">
+            {% for gameid in game_ids %}
+            <div class="game_table" data-gameid="{{ gameid }}">
+
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <hr>
+
+    <div class="graph_block">
+    <!--{{ graph_block }}-->
+    </div>
 
     {% endif %}
 

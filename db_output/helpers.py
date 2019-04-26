@@ -36,7 +36,7 @@ def generate_active_form_dict(match_dict):
     logger = logging.getLogger(__name__)
 
     if not isinstance(match_dict, OrderedDict):
-        logger.warning('match_dict is not OrderedDict - ordering is assumed')
+        logger.debug('match_dict is not OrderedDict - ordering is assumed')
 
     active_form_dict = OrderedDict()
     for index, match in enumerate(match_dict.values()):
@@ -80,7 +80,7 @@ def get_best_match(model, name):
             check_against[team.team_name] = team.team_ID
 
     else:
-        logger.warning('only Player and Team are supported models for get_best_match')
+        logger.error('only Player and Team are supported models for get_best_match')
         return None
 
     match = get_close_matches(name, list(check_against.keys()), n=1)

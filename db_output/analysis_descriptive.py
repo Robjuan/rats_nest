@@ -125,7 +125,7 @@ def points_played_by_player(games, player, starting_fence=None):
             this_game_points = Point.objects.filter(game=game, startingfence='D')
         else:
             if starting_fence:
-                logger.warning('unsupported starting_fence: '+starting_fence+', returning all points')
+                logger.error('unsupported starting_fence: '+starting_fence+', returning all points')
             this_game_points = Point.objects.filter(game=game)
 
         for point in this_game_points:

@@ -46,7 +46,7 @@ def check_conversion_dict(conversion_dict, file_obj_pk):
     player_names = get_player_names(file_obj_pk)
     for name in player_names:
         if not name:
-            logger.warning('blank name in player_names')
+            logger.error('blank name in player_names')
             continue
         if name not in conversion_dict:
             logger.error('name: ' + str(name) + ' not in conversion_dict')
