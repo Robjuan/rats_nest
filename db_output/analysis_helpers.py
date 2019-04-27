@@ -6,15 +6,6 @@
 import logging
 
 
-def get_dataframe_columns(frame, extra=[], start=0):
-    game_columns = frame.columns.values.tolist()
-
-    for index, extra_col in enumerate(extra, start=start):
-        game_columns.insert(index, extra_col)
-
-    return game_columns
-
-
 def starting_fence_flip(starting_fence):
     if starting_fence == 'D':
         return 'O'

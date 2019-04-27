@@ -1,8 +1,43 @@
 # in this file we will construct the dataframes required for higher level analysis
 import pandas as pd
-import numpy as np
 from .analysis_helpers import *
 from .ua_definitions import *
+
+
+def prepare_rowlist_display(dataframe, columns):
+    """
+    takes in a database and a list of columns that we want to display
+
+    generates a list that can be pumped straight into datatables
+    each row is a dict in form: {index -> {column -> value}}
+
+    :param dataframe: df
+    :param columns: list of column names
+    :return: list of rows
+    """
+    from .analysis_columns import handle_custom_row
+
+    logger = logging.getLogger(__name__)
+
+    df_cols = dataframe.columns
+    extra_cols = [c for c in columns if c not in df_cols.to_list()]
+
+    datatables_frame = dataframe.to_dict(orient='index')
+    # {index -> {column -> value}}
+
+    row_list = []
+    i = 0
+    for index, data_dict in datatables_frame.items():  # for each row
+        row_dict = datatables_frame[index]
+
+        for col in extra_cols:
+            row_dict[col] = handle_custom_row(col, index, data_dict)
+
+        row_dict['DT_RowId'] = 'row_'+str(i)
+        row_list.append(row_dict)
+        i += 1
+
+    return row_list
 
 
 def construct_game_dataframe(game):

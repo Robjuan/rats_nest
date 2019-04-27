@@ -24,7 +24,7 @@ CACHES = {
     'default': {
         'BACKEND': 'django_bmemcached.memcached.BMemcached',
         'LOCATION': os.environ.get('MEMCACHEDCLOUD_SERVERS').split(','),
-        'TIMEOUT': 1200,  # 1200 seconds = 20 minutes
+        'TIMEOUT': 60 * 60 * 24,  # secs * minutes * hours = 1 day
         'OPTIONS': {
                     'username': os.environ.get('MEMCACHEDCLOUD_USERNAME'),
                     'password': os.environ.get('MEMCACHEDCLOUD_PASSWORD')

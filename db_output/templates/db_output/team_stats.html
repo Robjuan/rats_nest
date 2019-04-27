@@ -3,11 +3,14 @@
 {% load static %} {% load looping_extras %}
 
 {% block extra_head %}
-<style>
-th { font-size: 15px; }
-td { font-size: 13px; }
-</style>
-{% if data_selection_form %}  {{ data_selection_form.media.css }} {% endif %}
+    <style>
+        th { font-size: 15px; }
+        td { font-size: 13px; }
+        table td.game_names { border-right:0px solid grey;
+                              padding-right: 10px;}
+        table th.player_names { padding-left: 10px; }
+    </style>
+    {% if data_selection_form %}  {{ data_selection_form.media.css }} {% endif %}
 {% endblock %}
 
 {# we don't need these scripts if we're not displaying dataframes #}
@@ -72,17 +75,25 @@ td { font-size: 13px; }
 
     <h3> Team-Wide Stats: Overview</h3>
 
-    <div class="intro_block"><p>
+    <div class="intro_block">
         <b>Team:</b> {{ team_name }}<br>
-        <table><tr> {# single row table for column-like display #}
-            <td>
+        <table>
+        <tr>
+            <th>
                 <b>Games: </b>
+            </th>
+            <th class="player_names">
+                <b>Active Players:</b>
+            </th>
+        </tr>
+        <tr> {# single row table for column-like display #}
+            <td class="game_names">
                 <ul>{% for game in game_names %}
                     <li>{{ game }}</li>
                     {% endfor %}
-                </ul></td>
+                </ul>
+            </td>
             <td>
-                <b>Active Players:</b>
                 <ul>
                     {% for player in player_list %}
 
@@ -99,14 +110,14 @@ td { font-size: 13px; }
                 </ul>
             </td>
         </tr></table>
-    </p></div>
+    </div>
 
     <hr>
 
-    <div id="table_block_wrapper"><p>
+    <div id="table_block_wrapper">
 
         <div class="team_table_div">
-            <table id="team_table" class="display compact" style="width: 100%">
+            <table id="team_table" class="display compact" style="width: 100%" data-target="Team">
                 <thead>
                 <tr>
                     {% for column in team_columns %}
@@ -114,17 +125,6 @@ td { font-size: 13px; }
                     {% endfor %}
                 </tr>
                 </thead>
-
-
-                {% comment %}
-                <tfoot>
-                <tr>
-                    {% for column in team_columns %}
-                    <th>{{ column }}</th>
-                    {% endfor %}
-                </tr>
-                </tfoot>
-                {% endcomment %}
             </table>
 
         </div>
@@ -132,9 +132,18 @@ td { font-size: 13px; }
 
         <div class="game_table_div">
             {% for gameid in game_ids %}
-            <div class="game_table" data-gameid="{{ gameid }}">
-
-            </div>
+            {% index game_names forloop.counter0 as game_name %}
+            <b>{{ game_name }}:</b>
+            <table class="game_table display compact" style="width: 100%" data-gameid="{{ gameid }}" data-target="Game">
+                <thead>
+                <tr>
+                    {% for column in game_columns %}
+                    <th data-colname="{{ column }}">{{ column|title }}</th>
+                    {% endfor %}
+                </tr>
+                </thead>
+            </table>
+            <p></p>
             {% endfor %}
         </div>
     </div>

@@ -54,7 +54,7 @@
                     <li>{{ user.username }}</li>
                     <li><a href="{% url 'logout' %}">Logout</a></li>
                 {% else %}
-                    <li>You are not logged in - <a href="{% url 'login' %}">Login</a></li>
+                    <li>You are not logged in.<a href="{% url 'login' %}">Login</a></li>
                 {% endif %}
 
                 </ul>

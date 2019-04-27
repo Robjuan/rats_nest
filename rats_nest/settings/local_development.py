@@ -26,7 +26,7 @@ CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.memcached.PyLibMCCache',
         'LOCATION': 'localhost:11211',
-        'TIMEOUT': 1200,  # 1200 seconds = 20 minutes
+        'TIMEOUT': 60 * 60 * 24,  # secs * minutes * hours = 1 day
     }
 }
 

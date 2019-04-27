@@ -117,11 +117,11 @@ def get_datatables_json(request):
     :param request:
     :return:
     """
-    from .analysis_constructors import construct_team_dataframe, construct_game_dataframe
+    from .analysis_constructors import construct_team_dataframe, construct_game_dataframe, prepare_rowlist_display
     from .models import Game, Point
     from collections import OrderedDict
+    from django.core.cache import cache
     import json
-    import pandas as pd
 
     logger = logging.getLogger(__name__)
 
@@ -133,74 +133,34 @@ def get_datatables_json(request):
         logger.error('malformed data from jquery, returning failure')
         return JsonResponse({'success': False})
 
-    # TODO (optim) caching? saving in session?
-
     if target_constructor == 'Team':
         game_dict = OrderedDict()
         for game_id in data_reference:
             game_id = int(game_id)
-            try:
-                game_frame = pd.read_json(request.session[game_id])
-            except KeyError:
-                logger.debug('df for game '+str(game_id)+' not found in session, recalculating')
+
+            game_frame = cache.get(game_id)
+            if game_frame is None:
+                logger.debug('df for game '+str(game_id)+' not found in cache, recalculating')
                 game_frame = construct_game_dataframe(Game.objects.get(pk=game_id))
-                request.session[game_id] = game_frame.to_json()
+                cache.set(game_id, game_frame)
 
             game_dict[game_id] = game_frame
         dataframe = construct_team_dataframe(game_dict)
 
     elif target_constructor == 'Game':
-        try:
-            dataframe = pd.read_json(request.session[data_reference])
-        except KeyError:
+        dataframe = cache.get(data_reference)
+        if dataframe is None:
             logger.debug('df for game ' + str(data_reference) + ' not found in session, recalculating')
             dataframe = construct_game_dataframe(Game.objects.get(pk=data_reference))
-            request.session[data_reference] = dataframe.to_json()
+            cache.set(data_reference, dataframe)
 
     else:
         logger.error('invalid target_constructor passed: '+str(target_constructor))
         return JsonResponse({'success': False})
 
-    extra_cols = []
-    df_cols = dataframe.columns
-    if len(columns) > len(df_cols):
-        extra_cols = [c for c in columns if c not in df_cols.to_list()]
-
     records = len(dataframe.index)
-    datatables_frame = dataframe.to_dict(orient='index')
-    # {index -> {column -> value}}
 
-    row_list = []
-    i = 0
-    for index, pair in datatables_frame.items():
-        for col in extra_cols:
-            # TODO: is defining column title logic here a good move?
-            if col == 'Point':
-                try:
-                    obj = Point.objects.get(pk=index)
-                    datatables_frame[index][col] = obj.point_ID
-                except Point.DoesNotExist:
-                    datatables_frame[index][col] = 'point_ID NF'
-            elif col == 'Game':
-                try:
-                    obj = Game.objects.get(pk=index)
-                    if obj.opposing_team:
-                        datatables_frame[index][col] = 'vs ' + str(obj.opposing_team.team_name)
-                    else:
-                        datatables_frame[index][col] = '@ ' + str(obj.datetime)
-                except Game.DoesNotExist:
-                    datatables_frame[index][col] = 'game_ID NF'
-
-            else:
-                datatables_frame[index][col] = 'unsupported'
-                logger.error('unsupported column listed in template')
-
-        row_dict = datatables_frame[index]
-        row_dict['DT_RowId'] = 'row_'+str(i)
-        row_list.append(row_dict)
-        i += 1
-
-    #logger.debug(row_list)
+    row_list = prepare_rowlist_display(dataframe, columns)
 
     return JsonResponse({'success': True,
                          'draw': 1,

@@ -509,6 +509,7 @@ def parse_results(request):
     return render(request, 'db_output/parse_results.html', context={'parsed_results': parsed_results})
 
 
+# TODO RETIRE THIS VIEW
 def analysis_select(request):
     """
     Handles display of analysis selector
@@ -585,16 +586,15 @@ def team_stats(request):
     """
     Produces the team stats overview page
     Gets a team & games selection
-    Calls analysis
-    Returns something template -> list.js can use
+    selects columns desired
+    Sends info
+    tables done by ajax
 
     :param request:
     :return: team_stats
     """
-    from .analysis_helpers import get_dataframe_columns
-    from .analysis_constructors import construct_game_dataframe, construct_team_dataframe
+    from .analysis_columns import DEFAULT_TEAM_COLUMNS, COMPACT_GAME_COLUMNS
     from .forms import DataSelectionForm
-    from collections import OrderedDict
 
     logger = logging.getLogger(__name__)
 
@@ -618,25 +618,12 @@ def team_stats(request):
             player_list = []
             for game in games:
                 for point in game.points.all():
-                    player_list = player_list + [p for p in point.players.all() if p not in player_list]
+                    player_list = player_list + [p.proper_name for p in point.players.all() if p.proper_name not in player_list]
 
-            # need to know what columns will be used for each of Team and Game tables
-            # TODO (as needed) restructure this in a way that does not require running actual calculations
-            try:
-                game_columns = request.session['game_cols']
-                team_columns = request.session['team_cols']
-            except KeyError:
-                game_test_frame = construct_game_dataframe(games[0])
-                game_columns = get_dataframe_columns(game_test_frame, extra=['Point'], start=0)
-                request.session['game_cols'] = game_columns
+            # TODO: make this selectable by end user
 
-                test_game_dict = OrderedDict()
-                test_game_dict[games[0].game_ID] = game_test_frame
-                team_test_frame = construct_team_dataframe(test_game_dict)
-                team_columns = get_dataframe_columns(team_test_frame, extra=['Game'], start=0)
-                request.session['team_cols'] = team_columns
-
-            # TODO (next) send active player list
+            team_columns = DEFAULT_TEAM_COLUMNS
+            game_columns = COMPACT_GAME_COLUMNS
 
         return render(request, 'db_output/team_stats.html', context={'team_columns': team_columns,
                                                                      'game_columns': game_columns,
