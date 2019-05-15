@@ -23,7 +23,8 @@
         <script type="text/javascript" src="{% static 'datatables/datatables.min.js' %}"></script>
 
         {# js-cookie; for fetching csrf out of cookies #}
-        <!-- <script src="https://cdn.jsdelivr.net/npm/js-cookie@2/src/js.cookie.min.js"></script> -->
+        {# <!-- TODO: fix static not loading --> #}
+        <script src="https://cdn.jsdelivr.net/npm/js-cookie@2/src/js.cookie.min.js"></script>
         <script src="{% static 'js-cookie.js' %}"></script>
 
         {# where our custom jquery lives #}

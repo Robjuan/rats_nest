@@ -48,10 +48,10 @@
                     {# this is deprecated #}
                     {#<li><a href="{% url 'analysis_select' %}">Run specific analysis</a></li>#}
 
-                    {# this is hidden for production <!-- TODO: automate --> #}
-                    {#<li><a href="{% url 'team_stats' %}">View Team Stats</a></li>#}
+                    <li><a href="{% url 'team_stats' %}">View Team Stats</a></li>
 
-                    <li><a href="{% url 'player_stats' %}">View Player Stats</a></li>
+                    {# this is hidden for production <!-- TODO: automate --> #}
+                    {#<li><a href="{% url 'player_stats' %}">View Player Stats</a></li>#}
                     <li><a href="/admin">Access the admin portal</a></li> <!-- django backend is hardcoded -->
                     <li><a href="{% url 'contact_us' %}">Contact Us</a></li>
                     <li><hr></li>
