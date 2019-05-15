@@ -8,6 +8,10 @@ Heroku is our server/backend, Django is the framework, PostgreSQL is our databas
 PostgreSQL version must be 11.1+ (recommend BigSQL on mac)
 Requires libmemcached to be installed (and running) for local cache
 
+## javascript required:
+jquery
+datatables
+
 
 Workflow:
 

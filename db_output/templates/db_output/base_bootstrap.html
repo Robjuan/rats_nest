@@ -16,7 +16,8 @@
     <title>{% block title %}{% endblock %}</title>
 
     <!-- for django_select2 css, load jquery first up -->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script> -->
+    <script src="{% static 'jquery-3.4.1.min.js' %}"></script>
 
     <!-- extra_head should be here: -->
     {% block extra_head %}{% endblock %}
@@ -43,8 +44,14 @@
                     <li><a href="{% url 'index' %}">Home</a></li>
                     <li><a href="{% url 'upload_csv' %}">Upload a new UA csv</a></li>
                     <li><a href="{% url 'parse_select' %}">Parse an uploaded csv</a></li>
-                    <li><a href="{% url 'analysis_select' %}">Run specific analysis</a></li>
-                    <li><a href="{% url 'team_stats' %}">View Team Stats</a></li>
+
+                    {# this is deprecated #}
+                    {#<li><a href="{% url 'analysis_select' %}">Run specific analysis</a></li>#}
+
+                    {# this is hidden for production <!-- TODO: automate --> #}
+                    {#<li><a href="{% url 'team_stats' %}">View Team Stats</a></li>#}
+
+                    <li><a href="{% url 'player_stats' %}">View Player Stats</a></li>
                     <li><a href="/admin">Access the admin portal</a></li> <!-- django backend is hardcoded -->
                     <li><a href="{% url 'contact_us' %}">Contact Us</a></li>
                     <li><hr></li>

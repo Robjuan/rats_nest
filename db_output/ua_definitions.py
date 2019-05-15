@@ -11,6 +11,8 @@ TURNOVERS = ['Stall', 'Drop', 'Throwaway']
 
 PASSES = ['Catch', 'Goal', 'Throwaway', 'Drop']
 
+CATCHES = ['Catch', 'Goal']
+
 PULLS = ['Pull', 'PullOB']
 
 BLOCKS = ['D', 'Callahan']

@@ -20,6 +20,18 @@ def bool_we_scored(point):
         return bool(point.ourscore_EOP)
 
 
+def get_points_by_player(game, player):
+    # TODO (soon) search across relationships
+    from .models import Point
+
+    ret_pks = []
+    for point in game.points.all():
+        if point.players.filter(pk=player.player_ID).exists():
+            ret_pks.append(point.point_ID)
+
+    return Point.objects.filter(pk__in=ret_pks)
+
+
 def get_events_by_game(game):
     """
     returns all events for a game

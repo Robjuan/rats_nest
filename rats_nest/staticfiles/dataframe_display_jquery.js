@@ -7,12 +7,23 @@ $.fn.initalise_datatable = function(data_reference){
 
     columns = colnames.map(function(d) {
         return {'data':d}
-    })
+    });
 
-    //var csrftoken = Cookies.get('csrftoken');
-    var csrftoken = $("[name=csrfmiddlewaretoken]").val(); // required for django csrf protection
+    // required for django csrf protection
+    var csrftoken = Cookies.get('csrftoken');
+    if(!csrftoken){
+        var csrftoken = $("[name=csrfmiddlewaretoken]").val();
+    };
 
-    var target_constructor = $(this).data('target')
+    var target_constructor = $(this).data('target');
+
+    // todo: what if the player didn't play that game?
+
+    if ($(this).data('playerid')){
+        var playerid = $(this).data('playerid');
+    } else {
+        var playerid = -1;
+    };
 
     $(this).DataTable({
         //serverSide: true,
@@ -26,14 +37,15 @@ $.fn.initalise_datatable = function(data_reference){
 
         columns: columns,
 
-        // this maps straight on to the jquery ajax
+        // this maps straight on to the jquery ajax call
         ajax: {
             type : 'POST',
             url : 'ajax/get_datatables_json',
             headers : { "X-CSRFToken": csrftoken },
             data : { 'target_constructor': target_constructor,
                      'col_list': JSON.stringify(colnames),
-                     'data_reference': JSON.stringify(data_reference) }
+                     'data_reference': JSON.stringify(data_reference),
+                     'player_id':playerid }
         },
 
 
@@ -52,10 +64,11 @@ $(document).ready(function(){
         game_ids.push($(this).data('gameid'))
     });
 
-    $('#team_table').initalise_datatable(game_ids);
-
     $('.game_table').each(function(index){
         $(this).initalise_datatable($(this).data('gameid'));
     });
+
+
+    $('#compound_table').initalise_datatable(game_ids);
 
 });

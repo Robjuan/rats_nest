@@ -31,6 +31,7 @@ def prepare_rowlist_display(dataframe, columns):
         row_dict = datatables_frame[index]
 
         for col in extra_cols:
+            logger.debug('handling custom row: '+str(col)+'['+str(index)+']')
             row_dict[col] = handle_custom_row(col, index, data_dict)
 
         row_dict['DT_RowId'] = 'row_'+str(i)
@@ -226,3 +227,71 @@ def construct_team_dataframe(game_dict):
     tf = tf.assign(block_pct=block_pct)
 
     return tf
+
+
+def construct_player_totals_dataframe(game_dict):
+
+    df = pd.concat([frame.sum() for gameid, frame in game_dict.items()], axis=1)
+
+    return df
+
+
+def construct_player_game_dataframe(player, game):
+    """
+    we want to know:
+    passes thrown, catches, assists, goals, turnovers, blocks
+    scoring reception %
+    completion %
+    assist : turnover ratio
+
+    :param player:
+    :param game:
+    :return:
+    """
+    from .analysis_helpers import get_points_by_player
+
+    logger = logging.getLogger(__name__)
+
+    # todo: this is currently returning an empty queryset if the player didn't play any points
+    # we are not handling this properly
+    active_points = get_points_by_player(game, player)
+
+
+    df = pd.DataFrame(index=[p.point_ID for p in active_points])
+
+    passes = [get_events_by_point(point).filter(action__in=PASSES).filter(passer=player).count() for point in active_points]
+    passes = pd.Series(passes, index=df.index)
+
+    catches = [get_events_by_point(point).filter(action__in=CATCHES).filter(receiver=player).count() for point in active_points]
+    catches = pd.Series(catches, index=df.index)
+
+    assists = [get_events_by_point(point).filter(action__in=GOALS).filter(passer=player).count() for point in active_points]
+    assists = pd.Series(assists, index=df.index)
+
+    goals = [get_events_by_point(point).filter(action__in=GOALS).filter(receiver=player).count() for point in active_points]
+    goals = pd.Series(goals, index=df.index)
+
+    turnovers = [get_events_by_point(point).filter(action__in=TURNOVERS).filter(passer=player).count() for point in active_points]
+    turnovers = pd.Series(turnovers, index=df.index)
+
+    blocks = [get_events_by_point(point).filter(action__in=BLOCKS).filter(defender=player).count() for point in active_points]
+    blocks = pd.Series(blocks, index=df.index)
+
+    completion_pct = round(((passes - turnovers) / passes * 100), 2)
+    score_pct = round((goals / catches * 100), 2)
+
+    atr = round((assists / turnovers), 2)
+
+    df = df.assign(passes=passes)
+    df = df.assign(catches=catches)
+    df = df.assign(assists=assists)
+    df = df.assign(goals=goals)
+    df = df.assign(turnovers=turnovers)
+    df = df.assign(blocks=blocks)
+    df = df.assign(score_pct=score_pct)
+    df = df.assign(completion_pct=completion_pct)
+    df = df.assign(atr=atr)
+
+    logger.debug('pg df : '+str(df))
+
+    return df

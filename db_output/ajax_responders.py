@@ -117,8 +117,9 @@ def get_datatables_json(request):
     :param request:
     :return:
     """
-    from .analysis_constructors import construct_team_dataframe, construct_game_dataframe, prepare_rowlist_display
-    from .models import Game, Point
+    from .analysis_constructors import construct_team_dataframe, construct_game_dataframe,\
+        prepare_rowlist_display, construct_player_game_dataframe, construct_player_totals_dataframe
+    from .models import Game, Player
     from collections import OrderedDict
     from django.core.cache import cache
     import json
@@ -129,10 +130,12 @@ def get_datatables_json(request):
         target_constructor = request.POST['target_constructor']
         data_reference = json.loads(request.POST['data_reference'])
         columns = json.loads(request.POST['col_list'])
+        player_id = request.POST['player_id']
     except KeyError:
         logger.error('malformed data from jquery, returning failure')
         return JsonResponse({'success': False})
 
+    # compound table
     if target_constructor == 'Team':
         game_dict = OrderedDict()
         for game_id in data_reference:
@@ -147,12 +150,36 @@ def get_datatables_json(request):
             game_dict[game_id] = game_frame
         dataframe = construct_team_dataframe(game_dict)
 
+    # single table
     elif target_constructor == 'Game':
         dataframe = cache.get(data_reference)
         if dataframe is None:
-            logger.debug('df for game ' + str(data_reference) + ' not found in session, recalculating')
+            logger.debug('df for game ' + str(data_reference) + ' not found in cache, recalculating')
             dataframe = construct_game_dataframe(Game.objects.get(pk=data_reference))
             cache.set(data_reference, dataframe)
+
+    # compound table
+    elif target_constructor == 'PlayerTotal':
+        game_dict = OrderedDict()
+        for game_id in data_reference:
+            game_id = int(game_id)
+
+            game_frame = cache.get(str(player_id)+str(game_id))
+            if game_frame is None:
+                logger.debug('df for playergame ' + str(player_id)+str(game_id) + ' not found in cache, recalculating')
+                game_frame = construct_player_game_dataframe(Player.objects.get(pk=player_id), Game.objects.get(pk=game_id))
+                cache.set(str(player_id)+str(game_id), game_frame)
+
+            game_dict[game_id] = game_frame
+        dataframe = construct_player_totals_dataframe(game_dict)
+
+    # single table
+    elif target_constructor == 'PlayerGame':
+        dataframe = cache.get(str(player_id)+str(data_reference))
+        if dataframe is None:
+            logger.debug('df for playergame ' + str(player_id)+str(data_reference) + ' not found in cache, recalculating')
+            game_frame = construct_player_game_dataframe(Player.objects.get(pk=player_id), Game.objects.get(pk=data_reference))
+            cache.set(str(player_id)+str(data_reference), game_frame)
 
     else:
         logger.error('invalid target_constructor passed: '+str(target_constructor))
