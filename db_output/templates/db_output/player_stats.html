@@ -1,0 +1,88 @@
+{% extends 'db_output/base_bootstrap.html' %}
+{% if extra_head %} {{ extra_head }} {% endif %}
+{% load static %} {% load looping_extras %}
+
+
+{% block extra_scripts %}
+    {% if player_name %}
+        {# datatables; for display of tables, sortability, etc #}
+        <!-- <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.js"></script>
+        <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.19/css/jquery.dataTables.css"> -->
+        <link rel="stylesheet" type="text/css" href="{% static 'datatables/datatables.min.css' %}"/>
+        <script type="text/javascript" src="{% static 'datatables/datatables.min.js' %}"></script>
+
+        {# js-cookie; for fetching csrf out of cookies #}
+        <script src="https://cdn.jsdelivr.net/npm/js-cookie@2/src/js.cookie.min.js"></script>
+        <!--<script src="{% static 'js-cookie.js' %}"></script>-->
+
+        {# where our custom jquery lives #}
+        <script src="{% static 'dataframe_display_jquery.js' %}"></script>
+    {% endif %}
+    {% if player_selection_form %}  {{ player_selection_form.media.css }} {% endif %}
+{% endblock %}
+
+
+{% block title %} Player Stats Overview {% endblock %}
+
+{% block content %}
+
+    {% if player_selection_form %}
+    <h3> Player Stats: Selection</h3>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ player_selection_form.media.js }}
+        {{ player_selection_form.errors }}
+        {{ player_selection_form.player.label_tag }} {{ player_selection_form.player }}<p>
+        {{ player_selection_form.games.label_tag }} {{ player_selection_form.games }}<p>
+        <button type="submit">View</button>
+    </form>
+    {% endif %}
+
+    {% if player_name %}
+    <h3> Player Stats: Overview </h3>
+
+    <div class="intro_block">
+        <b>Player:</b> {{ player_name }}<br>
+        <ul>
+            {% for game in game_list %}
+            <li>{{ game }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <div id="table_block_wrapper">
+
+        <div class="total_table_div">
+            <table id="compound_table" class="display compact" style="width: 100%" data-playerid="{{ player_id }}" data-target="PlayerTotal">
+                <thead>
+                <tr>
+                    {% for column in playertotal_columns %}
+                    <th data-colname="{{ column }}">{{ column|title }}</th>
+                    {% endfor %}
+                </tr>
+                </thead>
+            </table>
+
+        </div>
+        <hr>
+
+        <div class="game_table_div">
+            {% for gameid in game_ids %}
+            {% index game_names forloop.counter0 as game_name %}
+            <b>{{ game_name }}:</b>
+            <table class="game_table display compact" style="width: 100%" data-gameid="{{ gameid }}" data-playerid="{{ player_id }}" data-target="PlayerGame">
+                <thead>
+                <tr>
+                    {% for column in playergame_columns %}
+                    <th data-colname="{{ column }}">{{ column|title }}</th>
+                    {% endfor %}
+                </tr>
+                </thead>
+            </table>
+            <p></p>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+{% endblock %}
