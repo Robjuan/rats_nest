@@ -70,7 +70,6 @@ def get_secondary_validation_form(param_model):
             for field_name, _field in self.fields.items():
                 _field.widget.attrs['data-modeltype'] = str(param_model.__name__)
 
-
         class Meta:
             model = param_model
             if param_model == Team:
@@ -87,6 +86,33 @@ def get_secondary_validation_form(param_model):
                 widgets = {'dob': DateInput(attrs={'type': 'date'})}  # might not work in FF or Safari?
 
     return SecondaryValidationForm
+
+
+class PlayerSelectionForm(forms.Form):
+    player = forms.ModelChoiceField(
+        queryset=Player.objects.all(),
+        label='Player',
+        widget=ModelSelect2Widget(
+            label='Search by proper_name',
+            model=Player,
+            search_fields=['proper_name__icontains'],
+            attrs={'data-width': '75%'}
+        )
+    )
+
+    games = forms.ModelMultipleChoiceField(
+        queryset=Game.objects.filter(verified=True),
+        label='Game(s)',
+        widget=ModelSelect2MultipleWidget(
+            model=Game,
+            search_fields=['tournament_name__icontains'],
+            #dependent_fields={'team': 'team'}, # TODO (next) make this work properly
+            max_results=500,
+            attrs={'data-width': '75%'},
+
+        )
+
+    )
 
 
 class DataSelectionForm(forms.Form):
@@ -110,7 +136,7 @@ class DataSelectionForm(forms.Form):
         label="Game(s)",
         widget=ModelSelect2MultipleWidget(
             model=Game,
-            search_fields=['tournament_name'],
+            search_fields=['tournament_name', 'opposing_team'],
             dependent_fields={'team': 'team'},
             max_results=500,
             attrs={'data-width': '75%'},
@@ -121,7 +147,7 @@ class DataSelectionForm(forms.Form):
 
 class AnalysisForm(forms.Form):
 
-    # TODO : depreciate this and retire checkbox analysis selectionx`
+    # TODO : depreciate this and retire checkbox analysis selection
 
     team = forms.ModelChoiceField(
         queryset=Team.objects.with_games(),

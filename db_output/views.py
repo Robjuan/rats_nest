@@ -644,3 +644,47 @@ def team_stats(request):
                                                                      'team_name': team.team_name,
                                                                      'game_names': game_names,
                                                                      'game_ids': [game.game_ID for game in games]})
+
+
+@ensure_csrf_cookie
+def player_stats(request):
+    """
+    displays the stats of a single player, and also per-point breakdowns
+    this will mirror team_stats in function
+
+    :param request:
+    :return:
+    """
+    from .forms import PlayerSelectionForm
+    from .analysis_columns import DEFAULT_PLAYER_GAME_COLUMNS
+    from .models import Player
+
+    logger = logging.getLogger(__name__)
+
+    if request.method == 'GET':
+        playerform = PlayerSelectionForm()
+        return HttpResponse(render(request, 'db_output/player_stats.html', {'player_selection_form': playerform}))
+
+    else:  # request.method == 'POST
+        playerform = PlayerSelectionForm(request.POST)
+        # TODO (next) display form for reload/reselect without leaving page
+        if playerform.is_valid():
+            player = playerform.cleaned_data['player']
+            games = playerform.cleaned_data['games']
+
+            playertotal_columns = DEFAULT_PLAYER_GAME_COLUMNS
+            playergame_columns = DEFAULT_PLAYER_GAME_COLUMNS
+
+            game_names = [str('vs ' + game.opposing_team.team_name) if game.opposing_team else game.game_ID for game in games]
+
+            return render(request, 'db_output/player_stats.html', context={'playertotal_columns': playertotal_columns,
+                                                                           'playergame_columns': playergame_columns,
+                                                                           'game_ids': [game.game_ID for game in games],
+                                                                           'game_names': game_names,
+                                                                           'player_name': player.proper_name,
+                                                                           'player_id': player.player_ID
+                                                                           })
+
+
+
+

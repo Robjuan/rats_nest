@@ -1,3 +1,5 @@
+{# this is maintained for the individual analysis running, otherwise deprecated #}
+
 {% extends 'db_output/base_bootstrap.html' %}
 {% if extra_head %} {{ extra_head }} {% endif %}
 
@@ -10,8 +12,8 @@
 {% block content %}
 
 
-
-    {% if display_table %}  {#<!-- TODO: sortable tables -->#}
+    {# datatables does sortable tables #}
+    {% if display_table %}
         <div id="display_table">
         {% for table in display_table %}
         <table class="table">
