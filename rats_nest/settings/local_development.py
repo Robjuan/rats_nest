@@ -17,8 +17,13 @@ SECRET_KEY = 'CHANGE_ME'
 TIME_ZONE = 'UTC'
 # TIME_ZONE = 'US/Pacific'
 
-DATABASES['default'] = dj_database_url.parse('postgres://rats_user:RatFriends420@localhost/rats_database',
-                                              conn_max_age=600)
+DB_NAME = os.environ.get('DB_NAME')
+DB_USERNAME = os.environ.get('DB_USERNAME')
+DB_PASSWORD = os.environ.get('DB_PASSWORD')
+
+# first defined in base.py
+DATABASES['default'] = dj_database_url.parse('postgres://'+DB_USERNAME+':'+DB_PASSWORD+'@localhost/'+DB_NAME,
+                                             conn_max_age=600)
 
 # largely for select2
 

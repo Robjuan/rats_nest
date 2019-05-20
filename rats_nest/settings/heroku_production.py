@@ -3,15 +3,9 @@ from .base import *
 
 logger = logging.getLogger(__name__)
 
-# will set these via heroku settings
-#DEBUG = False
-#DEBUG_PROPAGATE_EXCEPTIONS = False
-
-# going to change away from 420 because i want a job
-ALLOWED_HOSTS = ['rats-nest-420.herokuapp.com', 'rats-nest-1442.herokuapp.com']
+ALLOWED_HOSTS = ['rats-nest-1442.herokuapp.com']
 
 SECRET_KEY = os.environ.get('SECRET_KEY')
-
 
 DATABASES = {
      'default': {
